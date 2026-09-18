@@ -82,8 +82,9 @@ même pour un simple comptage, même sur une machine qui a la nuit devant elle.
 | Les mêmes philosophes **avec la précision des dates** | **3,1 s** | 400 lignes |
 | Les mêmes, avec le filtre `BestRank` | **11,1 s** | 400 lignes |
 
-**La règle qui en sort : une catégorie × un siècle par requête.** C'est l'unité
-de fabrication, et ce sera l'unité de fichier (§ 4).
+**Attention, cette règle a été corrigée le 2026-09-18 — voir § 3.3 quater.**
+Un siècle tient pour un *comptage*, pas pour une requête qui ramène des
+lignes.
 
 ### 3.3 bis — 400 lignes ne font pas 400 personnes
 
@@ -111,6 +112,39 @@ philosophes, 90 sont à l'année seulement.
 
 Une date moins précise que l'année est écartée : une barre placée à partir
 d'une décennie ne veut rien dire.
+
+### 3.3 quater — Un siècle est trop large dès qu'on ramène des lignes
+
+La même requête, celle que produit le code :
+
+| Fenêtre | Résultat |
+|---|---|
+| 1700 – 1800 | **502 au premier essai**, 19,6 s au second |
+| 1780 – 1800 | **4,9 s**, stable |
+
+Le comptage du § 3.3 ne ramenait qu'un nombre ; une requête qui ramène 400
+lignes avec leurs libellés coûte bien plus cher. **Toute fenêtre est donc
+découpée en tranches d'au plus 25 ans**, envoyées l'une après l'autre : le
+temps total est le même, mais aucune requête ne frôle le plafond.
+
+### 3.3 quinquies — Le pays coûte cher dans la requête, rien à côté
+
+| Façon de demander le pays | Temps | Personnes |
+|---|---|---|
+| Dans la requête principale | **13,2 s** | 173 sur 400 lignes |
+| À part, sur une liste fermée | **1,1 s** | 222 sur 228 |
+
+Couverture : **97 % des personnes** portent un pays, mais **46 % seulement des
+événements**. D'où la bande « indéterminé », qui n'est pas un ornement.
+
+Le pays d'un souverain ne vient pas de sa nationalité mais de la fonction
+qu'il occupe : `P1001` (juridiction), `P17` à défaut. Vérifié — « roi de
+France et de Navarre » pointe vers le royaume de France *et* celui de
+Basse-Navarre, et apparaît donc dans les deux bandes.
+
+**La fragmentation est mesurée : 62 pays pour 228 personnes, dont 40 pays
+n'en comptent qu'une ou deux.** Les bandes les plus fournies sont gardées, le
+reste va sous « autres ».
 
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
@@ -405,9 +439,34 @@ compté à l'écran.
 **Fini quand :** cliquer sur Napoléon allume Goethe, Beethoven et la Révolution
 française, et n'allume pas Descartes.
 
-### L4 — Les filtres
-**Fini quand :** changer un filtre déclenche exactement une requête, jamais deux
-en parallèle.
+### L4 — Les filtres et le regroupement ✅ fait le 2026-09-18
+Absorbe le lot L3. Deux sortes de filtres : ceux qui changent ce qu'il faut
+demander (période, catégories) et ceux qui ne font que trier ce qui est déjà
+là (pays, regroupement, entrée servant de centre). Les seconds ne coûtent
+aucune requête. Les événements entrent dans l'application. La colonne de
+gauche porte une bande par valeur, avec « autres » et « indéterminé ».
+
+**Mesuré dans Chromium :** 918 entrées en 3 bandes de catégorie dont 169
+événements ponctuels dessinés en losange ; 13 bandes au regroupement par pays,
+obtenues **sans aucune requête supplémentaire** ; la somme des hauteurs de la
+colonne (5 788 px) correspond à celle de la frise moins l'axe (5 822 px) ;
+10 requêtes au total, **jamais deux en même temps** ; aucune erreur en console.
+
+**Trois défauts trouvés par la mesure, et corrigés :**
+
+- **Un règne sans date de fin passait tous les filtres.** Écrite avec
+  `!BOUND(?fin)`, la condition laissait entrer un règne commencé en 2599 av.
+  J.-C. dans une fenêtre 1780-1805, étirant la frise sur 4 500 ans. Remplacé
+  par `COALESCE(?fin, ?debut)` : une fin inconnue est traitée comme égale au
+  début, la lecture prudente.
+- **Le quota effaçait une catégorie entière.** Appliqué globalement, il
+  supprimait *tous* les événements, dont la notoriété est bien plus basse que
+  celle des personnes. Le plan disait « par catégorie » ; le code ne le
+  faisait pas. Corrigé — et c'est exactement le genre d'écart qu'un chiffre
+  affiché à l'écran ne suffit pas à révéler.
+- **Le code plantait sur une ligne incomplète** au lieu de l'écarter et de la
+  compter, ce qui rendait la page entièrement blanche. Toutes les lectures de
+  réponse passent maintenant par une aide qui ne lève jamais d'erreur.
 
 ### L5 — La fabrique
 `socle/construire.py`, `socle/requetes/`, `socle/perimetre.json`, le workflow,
@@ -447,6 +506,13 @@ Téléphone, mode sombre, `README.md` disant d'où viennent les données.
   le quota ramène l'affichage à 60 barres, bien en deçà de la limite. La
   question se reposera quand les filtres permettront de tout demander.
 - **Le périmètre des fonctions souveraines** (§ 3.8) est à écrire à la main,
-  monarchie par monarchie. Décision de contenu.
+  monarchie par monarchie. Décision de contenu, et elle presse : au
+  regroupement par pays, des bandes comme « Hochstift » ou « diocèse de
+  Spire » se hissent parmi les plus fournies, parce que l'arbre des classes
+  de Wikidata range les évêques-princes parmi les souverains.
+- **Des pays font double emploi** : « Hongrie » et « royaume de Hongrie »
+  forment deux bandes distinctes. Les rapprocher demanderait de suivre les
+  liens entre un État historique et son successeur moderne — un chantier à
+  part, non mesuré.
 - **Le volume total du socle** n'est pas connu : il dépend du périmètre
   ci-dessus. Mesurable dès le L5.

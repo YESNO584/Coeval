@@ -9,7 +9,7 @@
 //     Sur 400 lignes, 228 personnes seulement, dont 80 en double.
 // Voir .claude/plan/coeval.md § 3.7 et § 3.9.
 
-const FORME_IDENTIFIANT = /^Q\d+$/;
+export const FORME_IDENTIFIANT = /^Q\d+$/;
 const FORME_DATE = /^(-?\d{4,})-(\d{2})-(\d{2})/;
 
 // Codes de précision de Wikidata. En deçà de 9, la date ne vaut pas mieux
@@ -17,11 +17,22 @@ const FORME_DATE = /^(-?\d{4,})-(\d{2})-(\d{2})/;
 const PRECISION_ANNEE = 9;
 const NOMS_PRECISION = { 9: "année", 10: "mois", 11: "jour" };
 
+// Lit une valeur d'une ligne de réponse sans supposer qu'elle est là.
+// Une réponse inattendue doit faire écarter une ligne, jamais planter la
+// page : le plan interdit la page blanche (§ 7).
+export function valeurDe(ligne, nom) {
+  const champ = ligne[nom];
+  return champ === undefined || champ === null ? undefined : champ.value;
+}
+
 export function identifiantDepuisUrl(url) {
   return url.substring(url.lastIndexOf("/") + 1);
 }
 
-function dateDepuis(valeur, codePrecision) {
+export function dateDepuis(valeur, codePrecision) {
+  if (valeur === undefined) {
+    return null;
+  }
   const trouve = FORME_DATE.exec(valeur);
   const code = Number.parseInt(codePrecision, 10);
   if (trouve === null || Number.isNaN(code) || code < PRECISION_ANNEE) {
@@ -39,7 +50,7 @@ function dateDepuis(valeur, codePrecision) {
 // Entre deux dates concurrentes pour la même personne, on garde la plus
 // précise ; à précision égale, la plus ancienne, pour que deux exécutions
 // donnent toujours le même résultat.
-function meilleure(existante, candidate) {
+export function meilleure(existante, candidate) {
   if (existante === null) {
     return candidate;
   }
@@ -54,11 +65,16 @@ export function convertirPersonnes(lignes) {
   const ecartees = { sansDate: 0, sansNom: 0, doublons: 0 };
 
   for (const ligne of lignes) {
-    const id = identifiantDepuisUrl(ligne.p.value);
-    const nom = ligne.pLabel === undefined ? "" : ligne.pLabel.value;
-    const debut = dateDepuis(ligne.naissance.value, ligne.precNaissance.value);
-    const fin = dateDepuis(ligne.mort.value, ligne.precMort.value);
+    const url = valeurDe(ligne, "p");
+    const nom = valeurDe(ligne, "pLabel") ?? "";
+    const debut = dateDepuis(valeurDe(ligne, "naissance"), valeurDe(ligne, "precNaissance"));
+    const fin = dateDepuis(valeurDe(ligne, "mort"), valeurDe(ligne, "precMort"));
 
+    if (url === undefined) {
+      ecartees.sansDate += 1;
+      continue;
+    }
+    const id = identifiantDepuisUrl(url);
     if (nom === "" || FORME_IDENTIFIANT.test(nom)) {
       ecartees.sansNom += 1;
       continue;
@@ -72,12 +88,15 @@ export function convertirPersonnes(lignes) {
     if (connue === undefined) {
       parIdentifiant.set(id, {
         id,
+        idSujet: id,
         type: "personne",
+        detail: "",
         nom,
         debut,
         fin,
         instantane: false,
         categories: [],
+        pays: [],
         notoriete: null,
         sourceUrl: `https://www.wikidata.org/wiki/${id}`
       });
@@ -91,14 +110,18 @@ export function convertirPersonnes(lignes) {
   return { entrees: [...parIdentifiant.values()], ecartees };
 }
 
-export function ajouterNotoriete(entrees, lignes) {
+export function ajouterNotoriete(entrees, lignes, cle) {
   const parIdentifiant = new Map();
   for (const ligne of lignes) {
-    const id = identifiantDepuisUrl(ligne.p.value);
-    parIdentifiant.set(id, Number.parseInt(ligne.liens.value, 10));
+    const url = valeurDe(ligne, "p");
+    if (url === undefined) {
+      continue;
+    }
+    parIdentifiant.set(identifiantDepuisUrl(url), Number.parseInt(valeurDe(ligne, "liens"), 10));
   }
+  const champ = cle === undefined ? "id" : cle;
   for (const entree of entrees) {
-    const liens = parIdentifiant.get(entree.id);
+    const liens = parIdentifiant.get(entree[champ]);
     entree.notoriete = liens === undefined ? 0 : liens;
   }
   return entrees;
@@ -117,4 +140,31 @@ export function bornes(entrees) {
     max = Math.max(max, entree.fin.annee);
   }
   return entrees.length === 0 ? { min: 0, max: 0 } : { min, max };
+}
+
+// Rattache les pays à leurs entrées. 'cle' dit sur quel identifiant la
+// réponse porte : la personne elle-même, ou la fonction qu'elle occupait.
+export function ajouterPays(entrees, lignes, cle) {
+  const parSujet = new Map();
+  for (const ligne of lignes) {
+    const url = valeurDe(ligne, "sujet");
+    const nom = valeurDe(ligne, "paysLabel");
+    if (url === undefined || nom === undefined) {
+      continue;
+    }
+    const sujet = identifiantDepuisUrl(url);
+    const connus = parSujet.get(sujet);
+    if (connus === undefined) {
+      parSujet.set(sujet, [nom]);
+    } else if (!connus.includes(nom)) {
+      connus.push(nom);
+    }
+  }
+  for (const entree of entrees) {
+    const trouves = parSujet.get(entree[cle]);
+    if (trouves !== undefined) {
+      entree.pays = trouves;
+    }
+  }
+  return entrees;
 }

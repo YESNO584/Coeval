@@ -22,19 +22,45 @@ export const ATTENTE_ENTRE_TENTATIVES_MS = [2000, 6000];
 // Les catégories du socle. Les identifiants ont été vérifiés un par un
 // contre Wikidata le 2026-09-18 — voir .claude/plan/coeval.md § 3.9.
 export const CATEGORIES = {
-  philosophes: { nom: "Philosophes", metiers: ["Q4964182"] },
+  souverains: { nom: "Souverains", source: "fonction" },
+  philosophes: { nom: "Philosophes", source: "metier", metiers: ["Q4964182"] },
   scientifiques: {
     nom: "Scientifiques",
+    source: "metier",
     metiers: ["Q901", "Q170790", "Q593644", "Q11063", "Q864503"]
   },
   artistes: {
     nom: "Artistes",
+    source: "metier",
     metiers: ["Q1028181", "Q36834", "Q49757", "Q36180", "Q1281618"]
+  },
+  evenements: {
+    nom: "Événements",
+    source: "evenement",
+    classes: ["Q13418847", "Q198", "Q10931", "Q131569"]
   }
 };
 
 // Ce que la page affiche à l'ouverture, tant qu'il n'y a ni frise ni filtres.
-export const VUE_INITIALE = { categorie: "philosophes", debut: 1700, fin: 1800 };
+export const VUE_INITIALE = {
+  categories: ["philosophes", "souverains", "evenements"],
+  debut: 1780,
+  fin: 1805,
+  groupement: "categorie"
+};
+
+// Largeur maximale d'une tranche interrogée d'un coup.
+//
+// Mesuré le 2026-09-18 : la même requête rend 400 lignes en 4,9 s sur vingt
+// ans, mais met 19,6 s sur un siècle — et a échoué par dépassement de délai
+// au premier essai. Une fenêtre plus large est donc découpée en tranches
+// envoyées l'une après l'autre : autant de temps au total, aucune requête
+// au bord du plafond.
+//
+// La règle « une catégorie par siècle » notée au § 3.3 du plan avait été
+// mesurée sur un comptage, qui ne ramène qu'un nombre. Elle ne vaut pas pour
+// une requête qui ramène des lignes.
+export const TRANCHE_ANS = 25;
 
 // Plafond de sécurité par requête. Mesuré : 400 lignes reviennent en 3,1 s.
 // Attention : 400 lignes ne font pas 400 personnes. Wikidata porte plusieurs
@@ -47,3 +73,22 @@ export const LIMITE_RESULTATS = 400;
 // frise fait cinq mille pixels de haut — mesuré, et illisible. Ce qui passe
 // au-dessus du quota est compté et affiché, jamais tu.
 export const QUOTA_PAR_SIECLE = 60;
+
+// --- Regroupement (colonne de gauche) ---
+
+// Mesuré le 2026-09-18 : 228 philosophes se répartissent sur 62 pays, dont
+// 40 n'en contiennent qu'une ou deux personnes. Une bande par pays donnerait
+// une colonne illisible. Les plus fournies sont donc gardées, le reste est
+// réuni sous « autres » — et ce que la source ignore va dans « indéterminé »,
+// qui reste visible au lieu de disparaître.
+export const MAX_BANDES = 12;
+export const BANDE_AUTRES = "Autres";
+export const BANDE_INDETERMINEE = "Indéterminé";
+
+export const GROUPEMENTS = {
+  aucun: { nom: "Aucun" },
+  categorie: { nom: "Catégorie" },
+  pays: { nom: "Pays" },
+  siecle: { nom: "Siècle" },
+  fourchette: { nom: "Fourchette", largeurs: [25, 50, 100, 250], largeur: 50 }
+};

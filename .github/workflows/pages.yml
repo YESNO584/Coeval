@@ -57,7 +57,7 @@ jobs:
       # dépôt AN-API pour ses données.
       - name: Refuser de publier un site incomplet
         run: |
-          for fichier in site/index.html site/css/coeval.css site/js/app.js; do
+          for fichier in site/index.html site/css/base.css site/css/frise.css site/js/app.js; do
             if [ ! -s "$fichier" ]; then
               echo "::error::$fichier manque ou est vide — on ne publie pas."
               exit 1

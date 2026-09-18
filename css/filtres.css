@@ -1,0 +1,127 @@
+/* La barre de filtres et la colonne de regroupement. */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  margin: 1rem 0 0.2rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+}
+
+.groupe-filtre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  align-items: center;
+}
+
+.titre-filtre {
+  color: var(--gris);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.champ,
+.case {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  color: var(--gris);
+  font-size: 0.85rem;
+}
+
+.champ input,
+.champ select {
+  max-width: 11rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  background: var(--fond);
+  color: var(--texte);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.champ input[type="number"] {
+  width: 5.5rem;
+}
+
+.filtres button {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--carte);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.zone-frise {
+  display: flex;
+  align-items: flex-start;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  overflow: hidden;
+}
+
+.colonne {
+  flex: 0 0 9.5rem;
+  border-right: 1px solid var(--trait);
+  padding-top: 8px;
+}
+
+.colonne[hidden] {
+  display: none;
+}
+
+.bande {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid var(--trait);
+  overflow: hidden;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.nom-bande {
+  color: var(--texte);
+  font-weight: 600;
+}
+
+.compte-bande {
+  color: var(--gris);
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-frise .cadre {
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.separateur {
+  stroke: var(--trait);
+  stroke-width: 1;
+}
+
+.entree.type-evenement .barre {
+  fill: var(--alerte);
+}
+
+.entree.type-souverain .barre {
+  fill: #7a5aa8;
+}
+
+.losange {
+  stroke: var(--carte);
+  stroke-width: 1;
+}

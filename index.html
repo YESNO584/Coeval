@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Coeval — qui vivait en même temps</title>
-  <link rel="stylesheet" href="css/coeval.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/frise.css">
+  <link rel="stylesheet" href="css/filtres.css">
 </head>
 <body>
   <header>
@@ -13,6 +15,8 @@
   </header>
 
   <main>
+    <div id="filtres" class="filtres"></div>
+
     <p id="etat" data-panne="non">Chargement…</p>
 
     <div class="barre-outils">
@@ -25,14 +29,18 @@
 
     <p id="choix" class="choix"></p>
 
-    <div id="cadre" class="cadre" tabindex="0">
-      <svg id="frise" xmlns="http://www.w3.org/2000/svg" role="img"
-           aria-label="Frise chronologique des personnes trouvées"></svg>
+    <div class="zone-frise">
+      <div id="colonne" class="colonne" aria-label="Regroupement"></div>
+      <div id="cadre" class="cadre" tabindex="0">
+        <svg id="frise" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="Frise chronologique"></svg>
+      </div>
     </div>
 
     <p class="legende">
       Une barre plus pâle, au bord tireté, signale une date connue à l'année
-      seulement — pas au jour près.
+      seulement — pas au jour près. Un losange marque un événement ponctuel.
+      Cliquez une barre pour voir tout ce qui recouvre sa période.
     </p>
   </main>
 

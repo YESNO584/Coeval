@@ -23,6 +23,40 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-18 — Lot L4 de Coeval (filtres et regroupement)
+
+- **`!BOUND(?fin)` dans un filtre de date laisse tout passer.** « La fin est
+  inconnue, donc la condition est vraie » — et un règne de 2599 av. J.-C.
+  s'affiche dans une fenêtre du XVIIIe siècle. `COALESCE(?fin, ?debut)` dit ce
+  qu'on veut vraiment : à défaut de fin, s'en tenir au début. *Le motif :* une
+  valeur absente n'est pas une valeur qui convient.
+- **Ce qui se mesure sur un comptage ne vaut pas pour une requête qui ramène
+  des lignes.** « Une catégorie par siècle » tenait en 3,3 s en comptant, et
+  échouait par dépassement de délai en ramenant 400 lignes avec leurs
+  libellés. Une règle de performance doit nommer la forme de requête sur
+  laquelle elle a été établie.
+- **Un plafond global efface la catégorie la moins bien dotée.** Le quota par
+  notoriété, appliqué à l'ensemble plutôt que par catégorie, supprimait *tous*
+  les événements — dont la notoriété est structurellement plus basse que celle
+  des personnes. Le plan disait « par catégorie », le code ne le faisait pas,
+  et l'écran n'affichait rien d'anormal. *À vérifier chaque fois qu'un
+  classement précède une coupure :* compter ce qui reste, par catégorie.
+- **`includes('wdt:P27')` est vrai pour `wdt:P279`.** Un aiguillage de test
+  bâti sur des sous-chaînes envoyait la réponse « pays » à la requête des
+  souverains. Le symptôme ressemblait à un bug de l'application ; il était
+  dans le banc d'essai. *Réflexe :* quand une vérification échoue, se demander
+  d'abord si c'est elle qui a tort.
+- **Lire `ligne.champ.value` sans filet suffit à blanchir une page.** Une
+  seule ligne inattendue faisait tomber toute l'application. Une aide qui
+  renvoie `undefined` au lieu de lever transforme la panne en une entrée
+  écartée et comptée.
+- **Le pays se demande à part, comme la notoriété.** 13,2 s dans la requête
+  principale, 1,1 s sur une liste fermée. C'est la troisième fois que le même
+  motif gagne : une requête large pour les identifiants, des requêtes bornées
+  pour les attributs. Le tenir pour acquis sur toute nouvelle propriété.
+
+---
+
 ## 2026-09-18 — Lot L2 de Coeval
 
 - **Compter les lignes d'une réponse SPARQL n'est pas compter les entités.**
