@@ -1,0 +1,73 @@
+# Publie la page de Coeval sur GitHub Pages à chaque poussée sur main.
+#
+# Deux réglages sont à faire une fois, à la main, dans le dépôt — une session
+# Claude Code n'y a pas accès :
+#   Settings → Actions → General : autoriser les workflows
+#   Settings → Pages → Source    : choisir « GitHub Actions »
+#
+# Adresse une fois publié : https://yesno584.github.io/Coeval/
+#
+# Ce workflow ne publie pour l'instant que des fichiers statiques. Le lot L5
+# y ajoutera la fabrique du socle, qui interrogera Wikidata et écrira les
+# fichiers JSON par siècle avant la publication.
+
+name: Publier la page
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "css/**"
+      - "js/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois ; une nouvelle n'annule pas celle en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    name: Assembler et publier
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Seuls les fichiers du site partent en ligne. La configuration de
+      # travail (.claude) et les futurs scripts de fabrique restent dans le
+      # dépôt sans être publiés.
+      - name: Assembler le site
+        run: |
+          mkdir -p site
+          cp index.html site/
+          cp -r css js site/
+
+      # Un site publié sans son code ne dirait rien de son échec : il
+      # s'afficherait, vide. Vérifier avant de publier, comme le fait le
+      # dépôt AN-API pour ses données.
+      - name: Refuser de publier un site incomplet
+        run: |
+          for fichier in site/index.html site/css/coeval.css site/js/app.js; do
+            if [ ! -s "$fichier" ]; then
+              echo "::error::$fichier manque ou est vide — on ne publie pas."
+              exit 1
+            fi
+          done
+          echo "$(find site -type f | wc -l) fichiers prêts à publier."
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploiement
+        uses: actions/deploy-pages@v4

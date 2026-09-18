@@ -2,13 +2,14 @@
 // fonction ici ne touche à l'affichage, pour qu'elles se recopient telles
 // quelles dans un portage Flutter.
 //
-// Deux contraintes mesurées le 2026-09-18 commandent leur forme :
+// Trois contraintes mesurées commandent leur forme :
 //   - l'indice « hint:rangeSafe » et des dates typées font passer la même
 //     requête de 58 s (échec) à 5,7 s ;
-//   - demander la notoriété dans la même requête la fait monter à 66 s, au
-//     delà du budget du service. Elle se demande donc séparément, sur une
-//     liste fermée d'identifiants : 0,76 s pour 400.
-// Voir .claude/plan/coeval.md § 3.4 et § 3.5.
+//   - demander la notoriété dans la même requête la fait monter à 66 s. Elle
+//     se demande séparément, sur une liste fermée : 0,76 s pour 400 ;
+//   - demander la précision des dates ne coûte rien, au contraire : 3,1 s
+//     contre 5,7 s sans elle (mesuré le 2026-09-18).
+// Voir .claude/plan/coeval.md § 3.
 
 const PREFIXE = 'PREFIX hint: <http://www.bigdata.com/queryHints#>';
 
@@ -19,15 +20,23 @@ function dateTypee(annee) {
 }
 
 // R1 — les personnes d'une catégorie dont la vie recouvre une fenêtre.
-// Une catégorie × une fenêtre par requête : au-delà, le service renonce.
+//
+// Chaque personne peut porter plusieurs dates de naissance et de mort
+// concurrentes dans Wikidata ; la requête les multiplie, si bien que 400
+// lignes ne font que 228 personnes (mesuré). Le filtre « BestRank » réduirait
+// les doublons mais coûte 11 s au lieu de 3,1 s et en laisse passer. Ils sont
+// donc résolus dans js/model.js, gratuitement et complètement.
 export function personnesVivantes(metiers, debut, fin, limite) {
   const valeurs = metiers.map((q) => `wd:${q}`).join(" ");
   return `${PREFIXE}
-SELECT DISTINCT ?p ?pLabel ?naissance ?mort WHERE {
+SELECT DISTINCT ?p ?pLabel ?naissance ?precNaissance ?mort ?precMort WHERE {
   VALUES ?metier { ${valeurs} }
   ?p wdt:P106 ?metier .
-  ?p wdt:P569 ?naissance . hint:Prior hint:rangeSafe true .
-  ?p wdt:P570 ?mort . hint:Prior hint:rangeSafe true .
+  ?p p:P569/psv:P569 [ wikibase:timeValue ?naissance ;
+                       wikibase:timePrecision ?precNaissance ] .
+  hint:Prior hint:rangeSafe true .
+  ?p p:P570/psv:P570 [ wikibase:timeValue ?mort ;
+                       wikibase:timePrecision ?precMort ] .
   FILTER(?naissance <= ${dateTypee(fin)})
   FILTER(?mort >= ${dateTypee(debut)})
   SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en" }
@@ -36,7 +45,6 @@ LIMIT ${limite}`;
 }
 
 // R2 — la notoriété d'un lot d'identifiants déjà connus.
-// La liste est fermée, donc le service répond en moins d'une seconde.
 export function notoriete(identifiants) {
   const valeurs = identifiants.map((q) => `wd:${q}`).join(" ");
   return `SELECT ?p ?liens WHERE {

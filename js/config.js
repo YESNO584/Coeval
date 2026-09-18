@@ -34,7 +34,16 @@ export const CATEGORIES = {
 };
 
 // Ce que la page affiche à l'ouverture, tant qu'il n'y a ni frise ni filtres.
-export const VUE_INITIALE = { categorie: "philosophes", annee: 1800 };
+export const VUE_INITIALE = { categorie: "philosophes", debut: 1700, fin: 1800 };
 
-// Plafond de sécurité par requête. Mesuré : 400 résultats reviennent en 5,7 s.
+// Plafond de sécurité par requête. Mesuré : 400 lignes reviennent en 3,1 s.
+// Attention : 400 lignes ne font pas 400 personnes. Wikidata porte plusieurs
+// dates concurrentes par personne, et la requête les multiplie — 400 lignes
+// ont donné 227 personnes lors de la mesure du 2026-09-18.
 export const LIMITE_RESULTATS = 400;
+
+// Le quota du plan (§ 6.1) : les 60 plus notoires par catégorie et par
+// siècle. Sans lui, 227 vies qui se chevauchent occupent 227 couloirs et la
+// frise fait cinq mille pixels de haut — mesuré, et illisible. Ce qui passe
+// au-dessus du quota est compté et affiché, jamais tu.
+export const QUOTA_PAR_SIECLE = 60;

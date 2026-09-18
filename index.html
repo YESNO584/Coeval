@@ -14,8 +14,26 @@
 
   <main>
     <p id="etat" data-panne="non">Chargement…</p>
-    <p id="densite"></p>
-    <ul id="liste"></ul>
+
+    <div class="barre-outils">
+      <p id="densite"></p>
+      <div class="zoom">
+        <button type="button" id="zoom-moins" aria-label="Voir une période plus large">−</button>
+        <button type="button" id="zoom-plus" aria-label="Voir de plus près">+</button>
+      </div>
+    </div>
+
+    <p id="choix" class="choix"></p>
+
+    <div id="cadre" class="cadre" tabindex="0">
+      <svg id="frise" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Frise chronologique des personnes trouvées"></svg>
+    </div>
+
+    <p class="legende">
+      Une barre plus pâle, au bord tireté, signale une date connue à l'année
+      seulement — pas au jour près.
+    </p>
   </main>
 
   <footer>

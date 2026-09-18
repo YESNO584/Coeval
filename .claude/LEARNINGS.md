@@ -23,6 +23,30 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-18 — Lot L2 de Coeval
+
+- **Compter les lignes d'une réponse SPARQL n'est pas compter les entités.**
+  400 lignes de philosophes ne font que 227 personnes : Wikidata porte
+  plusieurs dates concurrentes par personne et la requête multiplie les
+  combinaisons. Toute estimation de volume tirée d'un nombre de lignes est
+  fausse d'environ 40 %. *Le réflexe :* dédoublonner avant de compter, et dire
+  lequel des deux on annonce.
+- **Le filtre `BestRank` n'est pas la solution à ces doublons.** Il en retire
+  la plupart mais coûte 11,1 s au lieu de 3,1 s et en laisse passer 32. Les
+  arbitrer dans le code est gratuit, complet, et se documente.
+- **Demander la précision d'une date coûte moins cher que ne pas la
+  demander** : 3,1 s contre 5,7 s pour la même requête. Contre-intuitif, et
+  vérifié deux fois.
+- **Une fonction peut être correcte et ne jamais s'exécuter dans la vue
+  testée.** Le rendu des dates floues affichait « 0 barre approximative » non
+  par panne mais parce que les personnes les plus connues ont toutes des dates
+  au jour près, et que le dédoublonnage remplace une date floue par une date
+  précise dès qu'il en existe une. Il a fallu chercher une personne dont
+  *toutes* les dates sont floues pour exercer le code. *Le motif :* « zéro
+  résultat » demande la même enquête qu'une erreur.
+
+---
+
 ## 2026-09-18 — Lots L0 et L1 de Coeval
 
 - **Le vérificateur coupait toute ligne contenant une adresse web.**

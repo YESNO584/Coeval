@@ -79,9 +79,38 @@ même pour un simple comptage, même sur une machine qui a la nuit devant elle.
 | Souverains dont un règne débute au XVIIIe | **11 s** | 712 |
 | Événements du XVIIIe (4 classes) | **12 s** | 357 |
 | Notoriété d'un lot de 400 identifiants | **0,76 s** | 400 |
+| Les mêmes philosophes **avec la précision des dates** | **3,1 s** | 400 lignes |
+| Les mêmes, avec le filtre `BestRank` | **11,1 s** | 400 lignes |
 
 **La règle qui en sort : une catégorie × un siècle par requête.** C'est l'unité
 de fabrication, et ce sera l'unité de fichier (§ 4).
+
+### 3.3 bis — 400 lignes ne font pas 400 personnes
+
+Mesuré le 2026-09-18 : **400 lignes renvoyées, 227 personnes seulement**, dont
+80 en double. Wikidata porte plusieurs dates concurrentes pour la même
+personne — une naissance à l'année et une au jour, deux morts à un jour
+d'écart — et la requête multiplie les combinaisons. Une personne avec deux
+naissances et deux morts occupe quatre lignes.
+
+Le filtre `BestRank` réduit les doublons (364 personnes sur 400 lignes) mais
+coûte **11,1 s au lieu de 3,1 s** et en laisse encore passer 32. Les doublons
+sont donc résolus dans le code, gratuitement et complètement : on garde la
+date la plus précise, et à précision égale la plus ancienne, pour que deux
+exécutions donnent le même résultat.
+
+**Conséquence pour les volumes :** toute estimation tirée d'un nombre de
+lignes est fausse d'environ 40 %. Compter les personnes, jamais les lignes.
+
+### 3.3 ter — La précision des dates ne coûte rien
+
+Demander `wikibase:timePrecision` en même temps que la date : **3,1 s**, contre
+5,7 s pour la même requête sans elle. Elle est donc demandée systématiquement.
+Les codes rencontrés : 9 (année), 10 (mois), 11 (jour). Sur 400 lignes de
+philosophes, 90 sont à l'année seulement.
+
+Une date moins précise que l'année est écartée : une barre placée à partir
+d'une décennie ne veut rien dire.
 
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
@@ -326,17 +355,19 @@ de ne pas corriger le biais deviendrait un mensonge par omission.
 
 ## 9. Hébergement
 
-Mode **GitHub Actions**, comme le dépôt AN-API du même compte. Deux réglages à
-faire une fois, à la main — une session Claude Code n'y a pas accès :
+Mode **GitHub Actions**, comme le dépôt AN-API du même compte. Les deux
+réglages manuels (*Actions → autoriser les workflows*, *Pages → Source :
+GitHub Actions*) ont été faits par l'utilisateur le 2026-09-18.
 
-- *Settings → Actions → General* : autoriser les workflows ;
-- *Settings → Pages → Source* : choisir « GitHub Actions ».
+`.github/workflows/pages.yml` publie la page à chaque poussée sur `main`, et
+**refuse de publier** si un fichier du site manque ou est vide. Le lot L5 y
+ajoutera la fabrique du socle.
 
-Adresse une fois publié : `https://yesno584.github.io/Coeval/`.
+Adresse : `https://yesno584.github.io/Coeval/`.
 
 ## 10. Découpage en lots
 
-### L0 — Remettre le vérificateur de code en état
+### L0 — Remettre le vérificateur de code en état ✅ fait le 2026-09-18
 **Avant la première ligne de code produit.** Aujourd'hui `code_rules.json` est
 réglé pour le C# et `discover_units.py` ne trouve aucune unité : le
 vérificateur passe au vert sans rien lire.
@@ -344,7 +375,7 @@ vérificateur passe au vert sans rien lire.
 **Fini quand :** il trouve au moins une unité et signale une vraie violation sur
 un fichier volontairement fautif.
 
-### L1 — Le squelette qui affiche quelque chose
+### L1 — Le squelette qui affiche quelque chose ✅ fait le 2026-09-18
 `index.html`, `config.js`, `sparql.js` (file série), `queries.js`, `model.js`.
 Pas de frise : une liste de noms et de dates, obtenue en direct.
 
@@ -352,13 +383,23 @@ Pas de frise : une liste de noms et de dates, obtenue en direct.
 dates, sans erreur dans la console, et n'envoie jamais deux requêtes en même
 temps.
 
-### L2 — La frise
-Axe des années, une barre par entrée, zoom, défilement. Bords estompés pour les
-dates imprécises, repères pour les événements ponctuels.
+### L2 — La frise ✅ fait le 2026-09-18
+Axe des années, une barre par entrée rangée en couloirs, zoom, défilement.
+Barres pâles à bord tireté pour les dates connues à l'année seulement.
 
-**Fini quand :** les mesures prises dans un vrai navigateur (agent
-`static-page-layout-verifier`) confirment le placement, le zoom, et l'absence
-d'erreur JavaScript.
+**Mesuré dans Chromium :** 60 barres, 60 couloirs, aucun recouvrement dans un
+couloir ; le grossissement porte la largeur de 702 à 1 123 pixels et le
+défilement s'active ; un clic estompe les 59 autres barres ; une date floue
+s'affiche à 0,4 d'opacité contre 0,85, bord tireté 3/2 ; aucune erreur en
+console.
+
+**Ce que la mesure a révélé :** sans quota, 227 vies qui se chevauchent
+occupent 227 couloirs, soit une frise de 5 036 pixels de haut — illisible. Le
+quota du § 6.1 est donc appliqué à l'affichage, et ce qui passe au-dessus est
+compté à l'écran.
+
+**Repères des événements ponctuels :** reportés au lot qui introduit les
+événements, faute d'événements à dessiner aujourd'hui.
 
 ### L3 — Les contemporains
 **Fini quand :** cliquer sur Napoléon allume Goethe, Beethoven et la Révolution
@@ -402,8 +443,9 @@ Téléphone, mode sombre, `README.md` disant d'où viennent les données.
 ## 12. Ce qui reste incertain
 
 - **Le quota de 60 est un point de départ**, à regarder à l'écran.
-- **Le nombre d'entrées affichables sans ralentir** n'est pas mesuré. À faire au
-  L2.
+- **Le nombre d'entrées affichables sans ralentir** n'est toujours pas mesuré :
+  le quota ramène l'affichage à 60 barres, bien en deçà de la limite. La
+  question se reposera quand les filtres permettront de tout demander.
 - **Le périmètre des fonctions souveraines** (§ 3.8) est à écrire à la main,
   monarchie par monarchie. Décision de contenu.
 - **Le volume total du socle** n'est pas connu : il dépend du périmètre
