@@ -61,6 +61,29 @@ dans une table à part, à raison d'autant de lignes que nécessaire.
 C'est ce qui permet de dire « notre lieu n° 2 et le `Q142` de Wikidata sont le
 même » sans jamais confondre les deux numérotations.
 
+### R4 bis — Chaque table porte une `description` en texte libre
+
+**Toutes** les tables — entités, liens, transverses — ont une colonne
+`description`, du texte libre sans longueur imposée. Elle dit ce que les
+colonnes structurées ne savent pas dire : une nuance, une réserve, la raison
+d'un choix.
+
+Sur une table de lien, elle vaut souvent plus que sur une entité : « il y
+séjourne après son exil, sans jamais y résider officiellement » n'entre dans
+aucune colonne, et c'est pourtant l'essentiel.
+
+**Trois règles pour qu'elle reste utile plutôt que de devenir un fourre-tout :**
+
+1. **Elle ne remplace jamais une colonne.** Une date écrite dans la
+   description est une date perdue : rien ne la cherchera. Si une information
+   revient souvent en texte libre, c'est le signe qu'il manque une colonne.
+2. **On sait toujours qui l'a écrite.** La ligne porte déjà `source_id` : une
+   description venue de Wikidata et une note personnelle ne se confondent pas.
+3. **Attention à la licence.** Recopier un résumé de Wikipédia y fait entrer
+   une licence CC BY-SA, qui impose d'attribuer et de partager à l'identique —
+   alors que Wikidata est en CC0, sans obligation. **Ne pas mélanger les deux
+   sans le noter dans `source`.**
+
 ### R5 — Un lien entre deux choses est presque toujours daté
 
 L'Alsace a été française, puis allemande, puis française. Une colonne `Parent`
@@ -111,7 +134,7 @@ faudrait dupliquer ces deux tables neuf fois.
 ## 3. Les tables d'entités
 
 Chacune porte au minimum : `id`, `nom` (la forme d'usage en français),
-`notice` (une ou deux phrases), `source_id`, `releve_le`.
+`description`, `source_id`, `releve_le`.
 
 | Table | Ce qu'elle contient | Colonnes propres |
 |---|---|---|
@@ -160,7 +183,7 @@ porter un lieu.
 ## 4. Les tables de lien
 
 Toutes portent : `id`, `debut_annee`, `debut_precision`, `fin_annee`,
-`fin_precision`, `source_id`, `releve_le`, `retenu`.
+`fin_precision`, `description`, `source_id`, `releve_le`, `retenu`.
 
 | Table | Relie | Colonne qui précise la nature du lien |
 |---|---|---|
@@ -230,9 +253,9 @@ il ne se devine pas.**
 
 | Table | Colonnes | Rôle |
 |---|---|---|
-| `source` | `id`, `nom`, `url`, `licence`, `consultee_le` | Wikidata, PeriodO, saisie manuelle… |
-| `identifiant_externe` | `id`, `entite_type`, `entite_id`, `referentiel`, `code`, `source_id` | Le pivot entre nos numéros et ceux du monde extérieur |
-| `appellation` | `id`, `entite_type`, `entite_id`, `langue_id`, `nom`, `principal`, `source_id` | Les noms selon la langue et la source : « Köln », « Cologne », « Colonia » |
+| `source` | `id`, `nom`, `url`, `licence`, `consultee_le`, `description` | Wikidata, PeriodO, saisie manuelle… |
+| `identifiant_externe` | `id`, `entite_type`, `entite_id`, `referentiel`, `code`, `source_id`, `description` | Le pivot entre nos numéros et ceux du monde extérieur |
+| `appellation` | `id`, `entite_type`, `entite_id`, `langue_id`, `nom`, `principal`, `source_id`, `description` | Les noms selon la langue et la source : « Köln », « Cologne », « Colonia » |
 
 ## 6. Ce que devient votre base actuelle
 
