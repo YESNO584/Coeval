@@ -1,67 +1,89 @@
 # Coeval — plan de développement
 
-> État : plan validé sur son périmètre, pas encore sur son contenu.
-> Écrit le 2026-09-18. Aucun code n'existe encore dans ce dépôt.
+> Écrit le 2026-09-18, révisé le même jour après mesure du service Wikidata et
+> lecture du dépôt AN-API. Architecture arrêtée : **option C**.
 
 ## 1. Le produit en une page
 
-**Coeval répond à une seule question : qui vivait en même temps que qui ?**
+**Coeval répond à une question : que se passait-il en même temps ?**
 
-On ouvre une page web, on voit une frise chronologique. Chaque personne y est
-une barre horizontale qui va de sa naissance à sa mort. On clique sur Napoléon :
-toutes les barres qui recouvrent la sienne s'allument. Ce sont ses contemporains.
+Une frise chronologique. Chaque personne est une barre qui va de sa naissance à
+sa mort ; chaque événement est un point (le sacre de Napoléon, 2 décembre 1804)
+ou une barre (la Révolution française, 1789-1799). On clique sur Napoléon :
+tout ce qui recouvre sa vie s'allume — les souverains régnants, les
+philosophes vivants, les guerres en cours.
 
-Deux filtres cadrent ce qu'on voit :
+Deux filtres : **par catégorie** (souverains, philosophes, scientifiques,
+artistes, événements) et **par personne** (on choisit une figure, la frise se
+recentre sur sa période).
 
-- **par catégorie** — souverains, philosophes, scientifiques, artistes ;
-- **par personne** — on choisit une figure, la frise se recentre sur sa période.
+### Dans la version 1
 
-### Ce qui est dans la version 1
+- La frise, ses deux filtres, le clic « montre-moi ce qui était contemporain ».
+- Une fiche minimale : nom, dates, catégorie, lien vers la source.
+- Un encart de densité : combien d'entrées par siècle, et combien ont été
+  écartées faute de date ou de nom (§ 8).
 
-- La frise, ses deux filtres, le clic « montre-moi les contemporains ».
-- Une fiche minimale au survol ou au clic : nom, dates, catégorie, lien Wikidata.
-- Un indicateur d'attente et un message clair quand la source ne répond pas.
-- Un encart de densité : combien de personnes affichées par siècle et par
-  catégorie (voir § 8).
+### Hors périmètre, explicitement
 
-### Ce qui est hors périmètre, explicitement
+- La carte et les frontières historiques.
+- Les lieux de résidence datés, les époques nommées (PeriodO).
+- Tout compte utilisateur, toute base de données.
+- L'application Flutter. Le § 11 dit quoi préserver pour elle.
+- **La persistance dans le navigateur (IndexedDB).** Écartée sur décision de
+  l'utilisateur le 2026-09-18. Elle deviendrait utile si le socle grossissait
+  au point que le téléchargement par siècle devienne pesant ; ce n'est pas le
+  cas. Idée conservée ici pour ne pas être redécouverte, pas pour être
+  réactivée seule.
 
-- La carte et les frontières historiques. Reportées, décidées ainsi.
-- Les lieux de résidence datés (`P551`), les époques nommées (PeriodO), les
-  événements. Le modèle de données leur laisse la place (§ 5), le produit non.
-- Tout compte utilisateur, toute sauvegarde, toute base de données.
-- L'application Flutter. Le § 11 dit ce qu'il faut préserver pour elle.
+## 2. Décisions arrêtées
 
-## 2. Décisions déjà prises
+| Décision | Choix |
+|---|---|
+| Forme livrée | Pages HTML statiques, fichiers séparés |
+| Architecture | **Option C** : socle fabriqué chaque nuit + requêtes en direct pour le reste |
+| Hébergement | GitHub Pages en mode « GitHub Actions », dépôt public |
+| Version 1 | Frise seule, sans carte |
+| Quota du socle | **60 par catégorie et par siècle** |
+| Correction du biais | **Option 1** : quota par siècle seul, déséquilibre rendu visible (§ 8) |
+| Branche | `main` |
 
-| Décision | Choix | Conséquence |
-|---|---|---|
-| Forme livrée | Pages HTML statiques | Aucun serveur, aucun hébergement à payer |
-| Données | Wikidata interrogé en direct depuis le navigateur | Rien n'est stocké dans le dépôt |
-| Organisation | Plusieurs fichiers séparés | Plus facile à faire évoluer qu'un fichier unique |
-| Dépôt | Public | GitHub Pages gratuit |
-| Version 1 | Frise seule | La carte viendra après, si elle vient |
-| Branche | `main` | Conforme au `CLAUDE.md` du projet |
+## 3. Ce qui a été mesuré
 
-## 3. Ce qui a été mesuré, et qui commande tout le reste
-
-Ces neuf constats ont été obtenus en interrogeant réellement le service
-Wikidata depuis cette session, le 2026-09-18. **Ils ne sont pas des
-suppositions.** Ils décident de l'architecture, donc ils sont en tête du plan.
+Obtenu en interrogeant réellement le service Wikidata le 2026-09-18. **Ce ne
+sont pas des suppositions.** Tout le reste du plan en découle.
 
 ### 3.1 Wikidata autorise les appels depuis n'importe quel site
 
-Le service répond avec l'en-tête `access-control-allow-origin: *`. C'est
-l'autorisation explicite donnée à tous les sites web. Une page hébergée sur
-GitHub Pages peut donc l'interroger directement, sans intermédiaire.
+En-tête `access-control-allow-origin: *`. Une page servie par GitHub Pages peut
+l'interroger directement.
 
-### 3.2 La requête naïve échoue
+### 3.2 Ce qui échoue
 
-« Tous les humains vivants en 1800, triés par notoriété » : **erreur 502 après
-58 secondes**. Le service coupe à 60 secondes. Cette forme est inutilisable et
-il ne faut pas la tenter.
+| Requête | Résultat |
+|---|---|
+| Tous les vivants en 1800, triés par notoriété | **502 après 58 s** |
+| *Compter* tous les humains ayant vécu au XVIIIe siècle | **504 après 72 s** |
+| Compter cinq métiers groupés sur ce siècle | **504 après 65 s** |
+| Une catégorie + notoriété, sur une année | **66 s** — au-delà du budget |
 
-### 3.3 Deux ingrédients rendent une requête viable
+**Le service coupe à 60 secondes.** « Tout le monde » n'est pas une requête,
+même pour un simple comptage, même sur une machine qui a la nuit devant elle.
+
+### 3.3 Ce qui marche, et à quel prix
+
+| Requête | Temps | Volume |
+|---|---|---|
+| Philosophes vivants une année donnée | **5,7 s** | 400 (limite atteinte) |
+| *Compter* les philosophes d'un siècle | **3,3 s** | **2 856** |
+| Souverains dont un règne débute au XVIIIe | **11 s** | 712 |
+| Événements du XVIIIe (4 classes) | **12 s** | 357 |
+| Notoriété d'un lot de 400 identifiants | **0,76 s** | 400 |
+
+**La règle qui en sort : une catégorie × un siècle par requête.** C'est l'unité
+de fabrication, et ce sera l'unité de fichier (§ 4).
+
+### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
 ```sparql
 PREFIX hint: <http://www.bigdata.com/queryHints#>
@@ -69,268 +91,320 @@ PREFIX hint: <http://www.bigdata.com/queryHints#>
 FILTER(?birth <= "1800-01-01T00:00:00Z"^^xsd:dateTime)
 ```
 
-- `hint:Prior hint:rangeSafe true` autorise le moteur à utiliser son index de
-  dates.
-- La date de comparaison doit être écrite comme une vraie date typée, pas
-  extraite avec `YEAR()`. `YEAR()` force la lecture de toutes les lignes.
+- `hint:Prior hint:rangeSafe true` autorise le moteur à utiliser son index.
+- La date doit être comparée comme une date typée. `YEAR(?birth) <= 1800` force
+  la lecture de toutes les lignes et ruine la requête.
 
-Avec ces deux ingrédients, plus un filtre de métier : **400 lignes en 5,7 s**.
+### 3.5 La notoriété se demande à part
 
-### 3.4 Le tri par notoriété tue la requête
+Demandée dans la requête principale : 66 s. Demandée ensuite sur une liste
+fermée d'identifiants : **0,76 s pour 400**. Motif à appliquer partout.
 
-La même requête, avec `wikibase:sitelinks` ajouté pour trier par notoriété :
-**66 secondes**, au-delà du budget du service. Elle n'a réussi que de justesse
-et ne réussira pas toujours.
+### 3.6 Deux requêtes en parallèle sont refusées
 
-### 3.5 La notoriété se demande séparément, et c'est instantané
-
-En deux temps : on récupère d'abord les identifiants (5,7 s), puis on demande
-la notoriété de ces identifiants-là seulement, par une liste fermée `VALUES`.
-**400 entités en 0,76 s.**
-
-**C'est le motif central de l'application : une requête large pour les
-identifiants, des requêtes bornées pour tout le reste.**
-
-### 3.6 Deux requêtes en parallèle déclenchent une limitation
-
-Erreur 429 dès deux appels simultanés depuis la même adresse. **Les requêtes
-doivent être mises en file et envoyées une par une.** Ce n'est pas un réglage
-de confort, c'est une condition de fonctionnement.
+Erreur 429 dès deux appels simultanés. **Les requêtes partent une par une**,
+côté navigateur comme côté fabrique.
 
 ### 3.7 Les dates manquent souvent
 
-Les 83 « rois des Francs » remontent en 3 s, mais le premier de la liste
-(Cararic) n'a ni naissance ni mort. **Une personne sans date n'est pas
-plaçable sur une frise** : il faut la filtrer, et compter combien ont été
-écartées pour le dire à l'écran.
+Sur 83 « rois des Francs » remontés, le premier de la liste n'a ni naissance ni
+mort. **Sans date, pas de place sur une frise.** Ces entrées sont écartées et
+comptées (§ 8).
 
-### 3.8 Un lien vers un fichier HTML dans GitHub n'affiche pas la page
+### 3.8 « Sous-classe de monarque » ramène un corpus inattendu
 
-GitHub sert les fichiers bruts comme du texte, avec une consigne qui interdit
-au navigateur de les interpréter. On voit le code source, pas la page.
-**GitHub Pages est obligatoire**, ce n'est pas un raffinement.
+La requête des souverains passe par les fonctions qui descendent de
+« monarque ». Sur le XVIIIe siècle, les huit premiers résultats sont des
+évêques-princes et des abbés. Ce n'est pas une erreur du moteur : ces charges
+*sont* des souverainetés dans l'arbre de Wikidata.
 
-### 3.9 Les identifiants de catégories, vérifiés un par un
+**Conséquence : la liste des fonctions retenues doit être écrite à la main**,
+explicitement, dans le dépôt. Le périmètre est un choix qu'on assume et qu'on
+peut discuter ; il ne doit pas être le sous-produit accidentel d'un arbre de
+classes.
 
-| Identifiant | Signification |
-|---|---|
-| `Q4964182` | philosophe |
-| `Q901` | scientifique |
-| `Q170790` | mathématicien | 
-| `Q593644` | chimiste |
-| `Q11063` | astronome |
-| `Q864503` | biologiste |
-| `Q1028181` | artiste peintre |
-| `Q36834` | compositeur |
-| `Q49757` | poète |
-| `Q36180` | écrivain |
-| `Q1281618` | sculpteur |
-| `Q483501` | artiste |
-| `Q116` | monarque |
-| `Q39018` | empereur |
-| `Q22923081` | roi des Francs |
+### 3.9 Un identifiant sans libellé, et un concept qui n'est pas une personne
 
-## 4. Architecture des fichiers
+Dans un échantillon de test, `Q7325` — « Juifs », qui n'est pas une personne —
+obtient un score de notoriété de 181. Et trois identifiants sont revenus sans
+aucun nom.
+
+Deux règles :
+- le filtre « est un être humain » s'applique **avant** toute mesure ;
+- **on n'affiche jamais un nom qu'on n'a pas reçu de la source.** Une entrée
+  sans nom est écartée et comptée, comme une entrée sans date.
+
+### 3.10 Un lien vers un fichier HTML dans GitHub n'affiche pas la page
+
+GitHub sert les fichiers bruts comme du texte. On voit le code source. **Pages
+est obligatoire**, en mode « GitHub Actions » (§ 9).
+
+## 4. Architecture
+
+### 4.1 Les deux moitiés
+
+**La fabrique** tourne dans GitHub Actions, une fois par jour. Elle interroge
+Wikidata sans se presser, écrit des fichiers JSON, et les publie.
+
+**La page** lit ces fichiers. Elle n'interroge Wikidata que pour ce que le
+socle ne contient pas (§ 6.3).
+
+Toutes les contraintes du § 3 cessent d'être subies par le visiteur : elles
+deviennent le problème d'une machine qui travaille la nuit.
+
+### 4.2 Les fichiers
 
 ```
-index.html            page unique, structure et conteneurs
-css/coeval.css        mise en forme
-js/config.js          catégories, identifiants Wikidata, seuils, URL du service
-js/sparql.js          file d'attente série, envoi, erreurs, mémoire de session
-js/queries.js         les requêtes, une fonction par usage (§ 6)
-js/model.js           normalisation en objets Personne, filtrage qualité
-js/timeline.js        dessin de la frise en SVG, zoom, défilement
-js/filters.js         les deux filtres et leur état
-js/contemporains.js   calcul et mise en évidence des vies qui se recouvrent
-js/coverage.js        encart de densité (§ 8)
-js/app.js             assemblage, séquence de démarrage
+index.html
+css/coeval.css
+js/config.js          catégories, quotas, adresses
+js/socle.js           chargement des fichiers du socle, par siècle
+js/sparql.js          file d'attente série, envoi, erreurs, mémoire de visite
+js/queries.js         les requêtes en direct
+js/model.js           normalisation, filtres de qualité, comptage des écartés
+js/timeline.js        la frise en SVG                       (lot L2)
+js/filters.js         les deux filtres                      (lot L4)
+js/contemporains.js   calcul des recouvrements              (lot L3)
+js/coverage.js        encart de densité                     (lot L6)
+js/app.js             assemblage
+
+socle/construire.py   la fabrique
+socle/requetes/       les requêtes SPARQL, un fichier par usage, versionnées
+socle/perimetre.json  la liste explicite des fonctions souveraines (§ 3.8)
+socle/test_*.py       tests de la fabrique
+socle/public/         ce qui est publié — produit, jamais commité
+.github/workflows/socle.yml
 ```
 
-Pas de cadre logiciel, pas d'étape de compilation, pas de dépendance
-téléchargée. Des modules JavaScript standard (`<script type="module">`), que
-tout navigateur récent charge directement. **Raison :** un fichier qu'on ouvre
-et qui marche, sans rien installer, est exactement ce qui a été demandé.
+**Le socle n'est pas commité.** Il est fabriqué à chaque exécution et publié
+directement. Le dépôt ne contient que du code et des critères.
+
+### 4.3 Un fichier par siècle
+
+```
+data/index.json     les siècles disponibles, leurs comptes, la date de fabrication
+data/1700.json      le XVIIIe siècle
+data/1800.json      le XIXe
+```
+
+La page ne charge que ce qu'elle affiche. **L'unité de fabrication mesurée au
+§ 3.3 — une catégorie × un siècle — est aussi l'unité de fichier.**
 
 ## 5. Le modèle de données
 
-Une **Personne** est un objet :
+Deux types, un seul format commun : tout ce qui s'affiche est **une entrée avec
+un début et une fin**.
 
 ```js
 {
-  id: "Q517",                  // identifiant Wikidata, la clé de tout
-  nom: "Napoléon Ier",
-  naissance: { annee: 1769, precision: "jour", brut: "1769-08-15" },
-  mort:      { annee: 1821, precision: "jour", brut: "1821-05-05" },
-  categories: ["souverain"],   // plusieurs possibles
-  notoriete: 312,              // nombre de liens entre wikipédias
+  id: "Q517",
+  type: "personne",              // ou "evenement"
+  nom: "Napoléon Ier",           // jamais inventé — § 3.9
+  debut: { annee: 1769, precision: "jour", brut: "1769-08-15" },
+  fin:   { annee: 1821, precision: "jour", brut: "1821-05-05" },
+  instantane: false,             // true pour un événement ponctuel
+  categories: ["souverain"],
+  notoriete: 287,
   sourceUrl: "https://www.wikidata.org/wiki/Q517"
 }
 ```
 
-Trois règles :
+Règles :
 
-1. **L'identifiant Wikidata est la clé unique.** Jamais le nom. Deux personnes
-   peuvent porter le même nom ; deux identifiants ne se confondent pas.
-2. **Une date porte toujours sa précision.** Wikidata sait dire « vers 1450 ».
-   Une frise qui affiche « 1450 » sans le signaler ment. La précision voyage
-   avec la date et se voit à l'écran (barre aux bords estompés).
-3. **Le champ `sourceUrl` n'est pas décoratif.** Toute affirmation à l'écran
-   doit pouvoir être remontée à sa source en un clic.
+1. **L'identifiant Wikidata est la clé.** Jamais le nom.
+2. **Une date porte toujours sa précision.** Une frise qui affiche « 1450 »
+   pour un « vers 1450 » ment. La barre a des bords estompés.
+3. **Un événement ponctuel a `debut == fin` et `instantane: true`.** La frise
+   le dessine comme un repère, pas comme une barre d'un jour invisible.
+4. **`sourceUrl` n'est pas décoratif.** Toute affirmation remonte à sa source
+   en un clic.
 
-**Place laissée pour la suite, sans être remplie :** `lieux` (résidences
-datées), `periodes` (époques nommées), `relations`. Déclarés dans le modèle,
-ignorés par la version 1.
+## 6. La sélection : ce que contient le socle
 
-## 6. Les requêtes
+**On ne choisit pas des personnes, on écrit une règle.** Chaque règle vit dans
+`socle/requetes/`, versionnée, rejouable par quiconque.
 
-Quatre requêtes, pas une de plus. Chacune vit dans `js/queries.js`, comme une
-fonction qui prend des paramètres et renvoie du texte SPARQL.
+### 6.1 Les trois familles
 
-### R1 — Les personnes d'une catégorie vivantes dans une fenêtre
+**Souverains — exhaustif sur un périmètre écrit à la main.** La liste des
+fonctions retenues est dans `socle/perimetre.json` (§ 3.8). Une fois la
+fonction retenue, *tous* ses détenteurs entrent, le célèbre comme l'obscur.
+Le périmètre est arbitraire et assumé ; le contenu ne l'est pas.
 
-La requête large. Forme obligatoire (§ 3.3), sans notoriété, sans tri.
-Mesurée : 5,7 s pour 400 lignes.
+**Philosophes, scientifiques, artistes — les 60 plus notoires par siècle.**
+2 856 philosophes pour le seul XVIIIe siècle : tout prendre est impossible.
 
-### R2 — La notoriété d'un lot d'identifiants
+**Événements — les 60 plus notoires par siècle.** Classes retenues : événement
+historique, guerre, révolution, traité. Les batailles sont volontairement
+exclues du socle en version 1 : elles sont des milliers et noieraient le reste.
+Elles restent accessibles en direct (§ 6.3).
 
-`VALUES ?p { ... }` puis `?p wikibase:sitelinks ?n`. Mesurée : 0,76 s pour 400.
-Sert à trier et à couper quand il y a trop de monde à afficher.
+**Filtre de qualité partout** : être un humain pour les personnes (§ 3.9),
+avoir un nom, avoir des dates connues à l'année au moins.
 
-### R3 — Les souverains
+### 6.2 Comment « les plus notoires » est défini
 
-Ils ne se trouvent pas par le métier mais par la **fonction occupée** (`P39`),
-avec ses qualificatifs de début et de fin de règne (`P580`, `P582`). C'est ce
-qui donne les dates de règne, distinctes des dates de vie.
+**Le nombre de Wikipédias qui ont un article sur l'entité.** Wikidata publie ce
+compte ; il coûte 0,76 s pour 400 entités (§ 3.5).
 
-### R4 — La fiche d'une personne
+Mesuré le 2026-09-18 :
 
-Une seule personne, un seul identifiant : instantané. Lieu de naissance, de
-mort, métiers, image.
+| Liens | Personne |
+|---:|---|
+| 313 | Confucius |
+| 287 | Napoléon Ier |
+| 253 | Emmanuel Kant |
+| 161 | Robin Williams |
+| 161 | Murasaki Shikibu |
+| 132 | Ada Lovelace |
+| 26 | Paul Wittgenstein |
 
-**Règle qui s'applique aux quatre :** toute requête part avec un en-tête
-`User-Agent` descriptif nommant le projet et son dépôt. C'est ce que demande
-Wikidata, et c'est ce qui évite d'être bloqué.
+**Le biais tient dans deux lignes de ce tableau : Robin Williams et Murasaki
+Shikibu sont à égalité.** Un acteur mort en 2014 pèse autant que la femme qui a
+écrit le premier roman de l'histoire. Cette mesure ne dit pas qui compte dans
+l'histoire ; elle dit qui intéresse les gens qui écrivent Wikipédia aujourd'hui.
+Elle penche vers le récent, vers l'Occident, vers les hommes.
 
-## 7. Tenir face aux limites du service
+**Elle est conservée malgré cela**, pour une raison : elle est reproductible et
+auditable. On peut discuter du résultat parce que la règle est écrite. Une
+sélection « au jugé » ne s'audite pas.
 
-| Limite mesurée | Réponse dans le code |
+Écartées, et pourquoi :
+- *le nombre de déclarations sur la fiche* — mesure la richesse de la fiche, pas
+  la renommée : Napoléon 614 contre Confucius 379, ce qui inverse le classement.
+  Gardé seulement pour départager deux égalités ;
+- *les consultations Wikipédia* — changent chaque mois, le socle cesserait d'être
+  reproductible ;
+- *un jugement d'IA* — invérifiable, et contraire au principe « le jeu de
+  données est une requête ».
+
+**Correction du biais : option 1.** Le quota par siècle corrige le penchant vers
+le récent. Le penchant vers l'Occident n'est pas corrigé — il est **rendu
+visible** (§ 8). Corriger un biais mesuré est plus simple que corriger un biais
+supposé.
+
+### 6.3 Ce qui déclenche une requête en direct
+
+Trois cas, et trois seulement :
+
+1. **une entité absente du socle** — une requête sur un identifiant, instantanée ;
+2. **« montre-moi tout le monde »** sur une période — au-delà des 60 ;
+3. **une catégorie non fabriquée** — médecins, explorateurs, batailles.
+
+## 7. Tenir face aux limites
+
+| Limite mesurée | Réponse |
 |---|---|
-| Une requête à la fois (§ 3.6) | File d'attente série dans `sparql.js`. Aucune exception. |
-| 60 secondes maximum (§ 3.2) | Aucune requête sans filtre de catégorie *et* de fenêtre. |
-| Le service tombe parfois | Trois tentatives espacées, puis un message nommant le problème. Jamais une page blanche. |
-| Latence de 1 à 6 s | Indicateur d'attente dès le premier appel. |
-| Rien n'est stocké | Mémoire de session : ce qui a été téléchargé pendant la visite n'est pas redemandé. Tout disparaît à la fermeture de l'onglet. |
+| Une requête à la fois (§ 3.6) | File d'attente série, dans la page comme dans la fabrique |
+| 60 secondes maximum (§ 3.2) | Aucune requête sans catégorie **et** sans fenêtre de temps |
+| Le service tombe | La page marche quand même : le socle est déjà publié |
+| Latence 1 à 12 s | Ne concerne plus que la fabrique, la nuit |
+| Rien n'est stocké chez le visiteur | Mémoire de visite seulement : ce qui a été chargé n'est pas rechargé tant que l'onglet est ouvert |
 
-**Ce que « mémoire de session » ne veut pas dire :** aucun fichier de données
-n'entre dans le dépôt, rien n'est écrit sur le disque du visiteur. C'est
-seulement le navigateur qui ne repose pas deux fois la même question.
+**Repris d'AN-API — le refus de publier des données vides.** Avant publication,
+la fabrique vérifie ses propres comptes et **s'arrête** s'ils sont
+invraisemblables. Sans ce garde-fou, une panne de Wikidata remplacerait un site
+correct par un site vide sans que personne s'en aperçoive.
+
+**Repris d'AN-API — l'empreinte des règles dans la clé du cache.** Le cache de
+GitHub Actions porte dans sa clé une empreinte des fichiers de requêtes.
+Modifier une requête refait le calcul complet tout seul, sans que personne ait
+à y penser.
 
 ## 8. L'encart de densité
 
 Une frise qui montre 40 souverains européens et 3 africains pour le XVIIIe
 siècle ne dit rien sur l'histoire : elle dit quelque chose sur Wikidata.
 
-L'encart affiche, pour ce qui est à l'écran : le nombre de personnes par
-siècle, et **le nombre de personnes écartées faute de dates** (§ 3.7).
+L'encart affiche, pour ce qui est à l'écran :
+- le nombre d'entrées par siècle et par catégorie ;
+- **le nombre d'entrées écartées**, avec leur motif : pas de date (§ 3.7), pas
+  de nom (§ 3.9), hors quota.
 
-Ce n'est pas un ornement. C'est ce qui empêche l'application de faire passer un
-trou de la source pour un fait historique.
+C'est la contrepartie de l'option 1 retenue au § 6.2. Sans cet encart, le choix
+de ne pas corriger le biais deviendrait un mensonge par omission.
 
-## 9. Hébergement et livraison
+## 9. Hébergement
 
-1. Rendre le dépôt public.
-2. Activer GitHub Pages sur la branche `main`, dossier racine.
-3. L'adresse devient `https://yesno584.github.io/Coeval/`.
-4. Vérifier depuis un navigateur : la page s'affiche et les données arrivent.
+Mode **GitHub Actions**, comme le dépôt AN-API du même compte. Deux réglages à
+faire une fois, à la main — une session Claude Code n'y a pas accès :
 
-Toute personne ayant l'adresse peut ouvrir l'application. Rien à installer,
-rien à payer.
+- *Settings → Actions → General* : autoriser les workflows ;
+- *Settings → Pages → Source* : choisir « GitHub Actions ».
+
+Adresse une fois publié : `https://yesno584.github.io/Coeval/`.
 
 ## 10. Découpage en lots
 
-Chaque lot se termine par quelque chose qui marche et qui se montre.
-
 ### L0 — Remettre le vérificateur de code en état
 **Avant la première ligne de code produit.** Aujourd'hui `code_rules.json` est
-un modèle réglé pour le langage C# et `discover_units.py` ne trouve aucun
-dossier à examiner : le vérificateur passe au vert sans rien vérifier.
-- Régler `scope.include_globs` sur les fichiers JavaScript, CSS et HTML.
-- Régler `scope.unit_discovery` pour qu'il voie les dossiers du projet.
-- Regénérer les règles avec l'agent `code-convention-miner` une fois le premier
-  code écrit.
+réglé pour le C# et `discover_units.py` ne trouve aucune unité : le
+vérificateur passe au vert sans rien lire.
 
-**Fini quand :** le vérificateur trouve au moins une unité et signale au moins
-une vraie violation sur un fichier volontairement fautif.
+**Fini quand :** il trouve au moins une unité et signale une vraie violation sur
+un fichier volontairement fautif.
 
 ### L1 — Le squelette qui affiche quelque chose
-`index.html`, `sparql.js` (file d'attente série), `queries.js` (R1 seule),
-`model.js`. Pas encore de frise : une liste de noms et de dates à l'écran.
+`index.html`, `config.js`, `sparql.js` (file série), `queries.js`, `model.js`.
+Pas de frise : une liste de noms et de dates, obtenue en direct.
 
-**Fini quand :** la page, ouverte depuis GitHub Pages, affiche les philosophes
-vivants en 1800 avec leurs dates, sans erreur dans la console.
+**Fini quand :** la page affiche les philosophes vivants en 1800 avec leurs
+dates, sans erreur dans la console, et n'envoie jamais deux requêtes en même
+temps.
 
 ### L2 — La frise
-`timeline.js` : axe des années, une barre par personne, zoom et défilement.
-Les dates imprécises s'affichent avec des bords estompés.
+Axe des années, une barre par entrée, zoom, défilement. Bords estompés pour les
+dates imprécises, repères pour les événements ponctuels.
 
 **Fini quand :** les mesures prises dans un vrai navigateur (agent
-`static-page-layout-verifier`) confirment le placement des barres, le zoom, et
-l'absence d'erreur JavaScript.
+`static-page-layout-verifier`) confirment le placement, le zoom, et l'absence
+d'erreur JavaScript.
 
 ### L3 — Les contemporains
-`contemporains.js` : clic sur une barre, mise en évidence de tout ce qui
-recouvre sa période.
-
-**Fini quand :** cliquer sur Napoléon allume Goethe, Beethoven et Kant, et
-n'allume pas Descartes.
+**Fini quand :** cliquer sur Napoléon allume Goethe, Beethoven et la Révolution
+française, et n'allume pas Descartes.
 
 ### L4 — Les filtres
-`filters.js` : catégories (les quatre) et choix d'une personne comme centre.
-Les souverains passent par R3, pas par le métier.
+**Fini quand :** changer un filtre déclenche exactement une requête, jamais deux
+en parallèle.
 
-**Fini quand :** changer un filtre déclenche exactement une requête, jamais
-deux en parallèle, et la frise se met à jour.
+### L5 — La fabrique
+`socle/construire.py`, `socle/requetes/`, `socle/perimetre.json`, le workflow,
+le refus de publier des données vides, l'empreinte des règles.
 
-### L5 — Robustesse et notoriété
-R2 pour le tri, mémoire de session, trois tentatives, messages d'erreur,
-indicateur d'attente.
+**Fini quand :** une exécution complète produit `data/index.json` et au moins
+trois fichiers de siècle, et qu'une exécution avec une requête volontairement
+cassée **refuse de publier**.
 
-**Fini quand :** couper le réseau pendant une requête produit un message
-compréhensible, et pas une page figée.
+### L6 — Socle et direct ensemble
+`socle.js`, et les trois cas de bascule vers le direct (§ 6.3). Encart de
+densité.
 
-### L6 — L'encart de densité
-`coverage.js`, avec le compte des personnes écartées faute de dates.
-
-**Fini quand :** le nombre affiché est vérifié à la main sur un cas connu.
+**Fini quand :** la page s'ouvre sans attendre sur le socle, et qu'une personne
+absente du socle s'affiche quand même après une requête en direct.
 
 ### L7 — Finition et mise en ligne
-Affichage sur téléphone, mode sombre, page publiée, `README.md` expliquant à
-quoi sert l'application et d'où viennent les données.
+Téléphone, mode sombre, `README.md` disant d'où viennent les données.
 
 **Fini quand :** l'adresse publique fonctionne depuis un autre appareil.
 
 ## 11. Ce qu'il faut préserver pour un portage Flutter
 
-Le portage refera l'interface. Il ne doit pas refaire le reste.
-
-- **`queries.js` et `model.js` sont le cœur transférable.** Les requêtes sont
-  du texte, elles se recopient telles quelles dans n'importe quel langage.
-- **Garder les requêtes séparées de leur affichage.** Aucune fonction de
-  `queries.js` ne doit toucher au HTML.
-- **Documenter chaque requête par son critère**, pas seulement par son code :
-  « les philosophes dont la vie recouvre la fenêtre » se réécrit ; un bloc
-  SPARQL sans explication se recopie mal.
-- Les constats du § 3 valent pour Flutter aussi : ce sont des propriétés du
-  service Wikidata, pas du navigateur.
+- **`socle/requetes/` et `js/model.js` sont le cœur transférable.** Les requêtes
+  sont du texte : elles se recopient dans n'importe quel langage.
+- **Le socle publié est une API.** Une application Flutter lira les mêmes
+  fichiers JSON, sans rien réécrire.
+- **Aucune fonction de requête ne touche au HTML.**
+- **Chaque requête est documentée par son critère**, pas seulement par son code.
+- Les constats du § 3 sont des propriétés du service Wikidata, pas du
+  navigateur : ils valent pour Flutter aussi.
 
 ## 12. Ce qui reste incertain
 
-- **Le seuil de notoriété n'est pas fixé.** Trop haut, la frise est vide avant
-  1500 ; trop bas, elle est illisible. Il se réglera à l'écran, au lot L5.
-- **Le nombre de personnes affichables sans ramer** n'a pas été mesuré. Une
-  frise SVG tient sans doute quelques milliers de barres ; à vérifier au L2.
-- **Les catégories restent à arrêter.** « Scientifique » couvre-t-il les
-  médecins, les ingénieurs ? Décision de contenu, pas de technique.
-- **Wikidata est biaisé** vers l'Occident, le récent et les hommes. L'encart du
-  § 8 rend le biais visible ; il ne le corrige pas. Le corriger demanderait des
-  quotas par aire culturelle — un chantier à part entière.
+- **Le quota de 60 est un point de départ**, à regarder à l'écran.
+- **Le nombre d'entrées affichables sans ralentir** n'est pas mesuré. À faire au
+  L2.
+- **Le périmètre des fonctions souveraines** (§ 3.8) est à écrire à la main,
+  monarchie par monarchie. Décision de contenu.
+- **Le volume total du socle** n'est pas connu : il dépend du périmètre
+  ci-dessus. Mesurable dès le L5.

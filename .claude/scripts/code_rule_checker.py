@@ -117,7 +117,33 @@ def load_rules(rules_path=None):
 # --------------------------------------------------------------------------
 
 def _strip_line_comments(text):
-    return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+    """Cut '//' line comments, but only outside string literals.
+
+    The naive `line.split("//")` truncated every line holding a URL — the
+    '//' of 'https://' was read as the start of a comment, so anything after
+    it became invisible to every regex rule. Found on 2026-09-18: the rule
+    watching for a hard-coded Wikidata endpoint could never fire, because the
+    endpoint itself contains the sequence that hid it.
+    """
+    stripped = []
+    for line in text.splitlines():
+        quote, i, cut = None, 0, len(line)
+        while i < len(line):
+            ch = line[i]
+            if quote is not None:
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == quote:
+                    quote = None
+            elif ch in "\"'`":
+                quote = ch
+            elif ch == "/" and line[i + 1:i + 2] == "/":
+                cut = i
+                break
+            i += 1
+        stripped.append(line[:cut])
+    return "\n".join(stripped)
 
 
 def _lineno(text, pos):

@@ -1,219 +1,225 @@
 {
-  "$schema_note": "Machine-readable C# code quality rules, consumed by scripts/code_rule_checker.py. Each rule's 'source' says whether it was reverse-engineered from actual patterns in this codebase ('observed') or is a generic C# best practice applied because the codebase is silent on it ('best_practice'). Never blend the two silently — a reader must be able to tell this project's real contract from filler. Run the code-convention-miner agent against the target codebase to refill 'evidence' and to add project-specific rules.",
-  "version": "1.0.0",
-  "generated_from": "TEMPLATE — not yet mined from any codebase. Run code-convention-miner and replace this string with the sampled paths.",
-
+  "$schema_note": "Règles de code de Coeval. Lues par .claude/scripts/code_rule_checker.py. Chaque règle porte un 'check' que le vérificateur sait exécuter ; une règle sans 'check' exécutable est signalée comme non automatisée plutôt que comptée verte.",
+  "version": 2,
+  "generated_from": "Écrit à la main au lot L0 (2026-09-18), avant la première ligne de code produit. À re-miner avec l'agent code-convention-miner une fois que js/ contient assez de code pour que les conventions observées valent mieux que ces choix de départ.",
   "scope": {
     "root": ".",
-    "include_globs": ["**/*.cs"],
-    "exclude_path_parts": ["bin", "obj", "Library", "Temp", "node_modules"],
+    "include_globs": [
+      "**/*.js",
+      "**/*.css",
+      "**/*.html"
+    ],
+    "_globs_note": "Le Python de la fabrique (socle/*.py, lot L5) n'est PAS couvert : les règles ci-dessous sont écrites pour JavaScript, et certaines seraient fausses en Python — 'no-double-equals' notamment, où '==' est la comparaison correcte. Ne pas ajouter '**/*.py' ici sans écrire d'abord les règles Python correspondantes. Un glob élargi sans règles adaptées produit des violations fausses et ruine la confiance dans tout le rapport.",
+    "exclude_path_parts": [
+      ".claude",
+      ".git",
+      "node_modules",
+      "data",
+      "public"
+    ],
     "vendor_detection": {
-      "_note": "How to recognise third-party code living inside the tree. Vendor code must never be linted — mixing it in produces false violations and erodes trust in the whole report. 'type_prefix' is the strongest signal when the project prefixes its own types (e.g. every first-party class starts with 'FG' / 'Acme'); leave it null if it doesn't, and rely on paths alone.",
+      "_note": "Code tiers vivant dans l'arbre. Il ne doit jamais être analysé : le mélanger produit des violations fausses. Coeval n'a aucune dépendance téléchargée — cette liste doit rester vide. Si elle se remplit un jour, l'inscrire aussi dans CLAUDE.md § « External / vendored code ».",
       "type_prefix": null,
       "path_contains_any": []
     },
     "unit_discovery": {
-      "_note": "How the checker splits the codebase into reportable units. 'directories_with_matching_manifest': a unit is any directory holding a file named after itself (foo/foo.json) — the convention in manifest-per-module codebases. 'top_level_directories': each immediate child of root is a unit. 'single_unit': the whole tree is one unit.",
-      "strategy": "top_level_directories",
+      "_note": "Tout l'arbre forme une seule unite. La strategie top_level_directories laissait index.html — la page elle-meme — hors de toute unite, donc jamais verifiee : constate le 2026-09-18. Le depot est petit, un rapport par dossier n'apporterait rien.",
+      "strategy": "single_unit",
       "root": ".",
       "manifest_suffix": ".json",
-      "exclude_dir_names": ["bin", "obj", "Library", "Temp", "node_modules", ".git"]
+      "exclude_dir_names": [
+        "bin",
+        "node_modules",
+        "data",
+        "public",
+        "docs",
+        ".git"
+      ]
     }
   },
-
   "rules": [
     {
-      "id": "indentation-4-spaces",
+      "id": "indentation-2-spaces",
       "category": "formatting",
       "severity": "error",
-      "source": "best_practice",
-      "description": "Indentation is 4 spaces. No tabs.",
-      "evidence": "",
-      "check": { "type": "no_tabs_and_indent_multiple_of", "indent_size": 4 }
-    },
-    {
-      "id": "brace-style-allman",
-      "category": "formatting",
-      "severity": "warning",
-      "source": "best_practice",
-      "description": "Opening braces for types, methods, and control-flow blocks go on their own line (Allman style). Never '){' or '} else {' on one line. Single-statement expression bodies using '=>' are exempt.",
-      "evidence": "",
-      "check": { "type": "regex_forbidden", "pattern": "\\)[ \\t]*\\{[ \\t]*$", "note": "character class deliberately excludes \\n — with \\s this would match legitimate Allman code where ')' ends one line and '{' begins the next" }
+      "source": "decided",
+      "description": "Indentation par multiples de 2 espaces, jamais de tabulation. Un multiple de 2 accepte aussi une indentation de 4, ce qui laisse passer du Python si le périmètre s'élargit un jour.",
+      "evidence": "Choisi au L0. Aucun code n'existait pour l'observer.",
+      "check": {
+        "type": "no_tabs_and_indent_multiple_of",
+        "indent_size": 2
+      }
     },
     {
       "id": "max-line-length",
       "category": "formatting",
       "severity": "warning",
-      "source": "best_practice",
-      "description": "Soft cap per line, plus a hard cap well above it. A line beyond the hard cap is almost always a bug (an accidentally minified or collapsed file), not a style choice. Set warn_over from the observed max across clean first-party files rather than from a habit.",
-      "evidence": "",
-      "check": { "type": "line_length", "warn_over": 130, "error_over": 200 }
+      "source": "decided",
+      "description": "Seuil souple à 100 caractères, seuil dur à 160. Au-delà du seuil dur, il s'agit presque toujours d'un fichier accidentellement compacté, pas d'un choix de style. Les requêtes SPARQL sont des chaînes longues par nature : si elles font sauter ce seuil, les sortir dans socle/requetes/ plutôt que relever le seuil.",
+      "evidence": "Choisi au L0.",
+      "check": {
+        "type": "line_length",
+        "warn_over": 100,
+        "error_over": 160
+      }
     },
     {
       "id": "max-file-lines",
       "category": "file-organization",
       "severity": "warning",
-      "source": "best_practice",
-      "description": "Soft cap of 400 lines per file; hard cap of 600. A file between the two should be justified, not routine.",
-      "evidence": "",
-      "check": { "type": "line_count", "warn_over": 400, "error_over": 600 }
+      "source": "decided",
+      "description": "Seuil souple à 250 lignes, seuil dur à 400. Le plan (§ 4.2) découpe volontairement le code en petits modules à responsabilité unique ; un fichier qui dépasse est le signe qu'il en contient deux.",
+      "evidence": "Découle du découpage en modules décidé dans .claude/plan/coeval.md § 4.2.",
+      "check": {
+        "type": "line_count",
+        "warn_over": 250,
+        "error_over": 400
+      }
     },
     {
-      "id": "one-public-type-per-file-filename-match",
-      "category": "file-organization",
+      "id": "no-var",
+      "category": "javascript",
       "severity": "error",
       "source": "best_practice",
-      "description": "Exactly one public top-level type per file, and the filename matches the type name exactly (Foo.cs -> class Foo). A nested 'Builder' class living alongside its outer class is exempt — splitting the standard C# Builder-pattern nested type into its own file separates two things that are conceptually one unit.",
+      "description": "Déclarer avec 'const', ou 'let' quand la valeur change. 'var' a une portée de fonction et non de bloc : dans une boucle, toutes les itérations partagent la même variable, ce qui casse silencieusement tout code asynchrone — exactement ce que fait la file d'attente des requêtes.",
       "evidence": "",
-      "check": { "type": "filename_matches_public_type", "known_exceptions": ["Builder"] }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "\\bvar\\s+[A-Za-z_$]"
+      }
     },
     {
-      "id": "namespace-mirrors-folder",
-      "category": "file-organization",
+      "id": "no-double-equals",
+      "category": "javascript",
       "severity": "warning",
       "source": "best_practice",
-      "description": "Namespace segments mirror the folder path under the source root. Set 'root' to the source root and 'namespace_root' to the top-level namespace; a file at <root>/A/B/thing/*.cs must then declare a namespace at or under '<namespace_root>.A.B'.",
+      "description": "Comparer avec '===' et '!=='. Les opérateurs '==' et '!=' convertissent les types avant de comparer : une année lue comme texte serait déclarée égale au nombre correspondant, et l'inverse passerait inaperçu.",
       "evidence": "",
-      "enabled": false,
-      "check": { "type": "namespace_matches_path", "root": ".", "namespace_root": "CHANGEME" }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "[^=!<>+\\-*/%&|^]==[^=]"
+      }
     },
     {
-      "id": "class-naming-prefix",
-      "category": "naming",
+      "id": "no-inner-html-assignment",
+      "category": "securite",
       "severity": "error",
-      "source": "observed",
-      "description": "First-party classes/structs are PascalCase and carry the project's own type prefix. Enable this ONLY if the project genuinely has such a prefix, and set the pattern accordingly (e.g. '^AC[A-Z]' for an 'AC' prefix). A nested 'Builder' class is exempt — it is already qualified by its outer class, so prefixing it again is stutter.",
-      "evidence": "",
-      "enabled": false,
-      "check": { "type": "regex_required", "pattern": "^CHANGEME[A-Z]", "applies_to": "public/internal class and struct names", "known_exceptions": ["Builder"] }
+      "source": "decided",
+      "description": "Ne jamais écrire dans '.innerHTML'. Les noms affichés viennent de Wikidata, que n'importe qui peut modifier : un nom contenant du code s'exécuterait dans la page. Construire les éléments et passer par 'textContent', qui ne peut rien exécuter.",
+      "evidence": "Découle de .claude/plan/coeval.md § 3.9 : tout ce qui s'affiche vient d'une source externe modifiable.",
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "\\.innerHTML\\s*="
+      }
     },
     {
-      "id": "interface-naming-i-prefix",
-      "category": "naming",
+      "id": "no-inline-event-handler",
+      "category": "securite",
       "severity": "warning",
       "source": "best_practice",
-      "description": "Interfaces are PascalCase prefixed with 'I' (IReceiptValidator, IAdProvider). List any legacy interface that predates the convention under known_exceptions rather than renaming it — and say in the description that it is not precedent for new ones.",
+      "description": "Pas de gestionnaire d'événement écrit dans le HTML (onclick=, onload=…). Le comportement vit dans les modules JavaScript, pas dans le balisage.",
       "evidence": "",
-      "check": { "type": "regex_required", "pattern": "^I[A-Z]", "applies_to": "interface names", "known_exceptions": [] }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "\\son(?:click|load|error|change|input|submit)\\s*=\\s*[\"']"
+      }
     },
     {
-      "id": "enum-naming-pascalcase",
-      "category": "naming",
-      "severity": "info",
-      "source": "best_practice",
-      "description": "Enums are PascalCase.",
-      "evidence": "",
-      "check": { "type": "regex_required", "pattern": "^[A-Z][a-zA-Z0-9]*$", "applies_to": "enum names" }
+      "id": "no-parallel-requests",
+      "category": "reseau",
+      "severity": "warning",
+      "source": "measured",
+      "description": "Ne pas lancer plusieurs requêtes de front. 'Promise.all' sur des appels réseau est la façon la plus directe de déclencher la limitation de débit de Wikidata : deux appels simultanés ont suffi, mesuré le 2026-09-18. Tout passe par la file d'attente série de js/sparql.js. Si 'Promise.all' porte sur autre chose que du réseau, le dire en commentaire au-dessus.",
+      "evidence": "Mesure du 2026-09-18 : erreur 429 dès deux requêtes simultanées. Voir .claude/plan/coeval.md § 3.6.",
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "Promise\\.all\\s*\\("
+      }
     },
     {
-      "id": "private-field-underscore-camelcase",
-      "category": "naming",
+      "id": "no-year-function-in-sparql",
+      "category": "reseau",
       "severity": "error",
-      "source": "best_practice",
-      "description": "Private (and private-readonly) instance fields are prefixed with a leading underscore, then camelCase: _callbacks, _isInitialized. A private static field whose name already fully matches the constant pattern is exempt — a config-like pseudo-constant declared without the 'const'/'readonly' keyword is the same idiom as the constant rule's exceptions, not a casing mistake.",
-      "evidence": "",
-      "check": { "type": "regex_required", "pattern": "^_[a-z][a-zA-Z0-9]*$", "applies_to": "private instance/static field names", "exempt_name_patterns": ["^[A-Z][A-Z0-9_]*_[A-Z0-9_]*$"] }
+      "source": "measured",
+      "description": "Ne jamais filtrer une date SPARQL avec 'YEAR(...)'. Cela empêche le moteur d'utiliser son index et fait passer la requête de 5,7 secondes à un échec par dépassement de délai. Comparer des dates typées, avec l'indice hint:rangeSafe.",
+      "evidence": "Mesure du 2026-09-18 : même requête, 502 après 58 s avec YEAR(), 5,7 s sans. Voir .claude/plan/coeval.md § 3.4.",
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "FILTER\\s*\\(\\s*YEAR\\s*\\("
+      }
     },
     {
-      "id": "constant-upper-snake-case",
-      "category": "naming",
-      "severity": "error",
-      "source": "best_practice",
-      "description": "const fields (public or private) are UPPER_SNAKE_CASE. If the project has a large, internally-consistent secondary convention in one subsystem (measured, not assumed), add it to exempt_name_patterns with the count as evidence rather than force-renaming it.",
-      "evidence": "",
-      "check": { "type": "regex_required", "pattern": "^[A-Z][A-Z0-9_]*$", "applies_to": "const field names", "exempt_name_patterns": [] }
-    },
-    {
-      "id": "public-member-pascalcase",
-      "category": "naming",
-      "severity": "error",
-      "source": "best_practice",
-      "description": "Public/protected properties and methods use PascalCase (standard .NET convention). Some names are dictated from outside the codebase and must NOT be renamed: interface members whose name the framework fixes, and members invoked by name across a native bridge (JNI/Objective-C), which break silently at runtime rather than at compile time. List those under known_exceptions with the reason. A member whose name already fully matches the constant pattern is also exempt: C# has no 'abstract const', so base classes commonly fake one with a read-only property named like a constant.",
-      "evidence": "",
-      "check": { "type": "regex_required", "pattern": "^[A-Z][a-zA-Z0-9]*$", "applies_to": "public/protected method and property names", "known_exceptions": [], "exempt_name_patterns": ["^[A-Z][A-Z0-9_]*_[A-Z0-9_]*$"] }
-    },
-    {
-      "id": "local-param-camelcase",
-      "category": "naming",
-      "severity": "info",
-      "source": "best_practice",
-      "description": "Local variables and method parameters use camelCase. Declared here for the record but not automated: locals and parameters cannot be extracted reliably with a line-oriented regex, and a checker that tries produces constant false positives.",
-      "evidence": "",
-      "check": { "type": "manual", "applies_to": "local variable and parameter names" }
-    },
-    {
-      "id": "generic-type-param-single-letter-documented",
-      "category": "naming",
-      "severity": "info",
-      "source": "best_practice",
-      "description": "Generic type parameters on base classes are single uppercase letters, and each is explained in an XML <typeparam> doc comment on the class.",
-      "evidence": "",
-      "check": { "type": "manual", "applies_to": "generic class/interface declarations" }
-    },
-    {
-      "id": "no-bare-console-logging",
-      "category": "architecture",
+      "id": "no-console-log",
+      "category": "javascript",
       "severity": "warning",
       "source": "best_practice",
-      "description": "Route logging through the project's own Log/LogWarning/LogError wrappers, not the platform's logger directly, so formatting and log-level policy live in one place. Set 'pattern' to the platform's raw logger (Unity: '\\\\bDebug\\\\.Log(Warning|Error)?\\\\s*\\\\(' — plain .NET: '\\\\bConsole\\\\.(Write|WriteLine)\\\\s*\\\\(') and exempt the units that implement the wrapper itself.",
+      "description": "Pas de 'console.log' laissé dans le code livré. Une erreur qui compte s'affiche à l'écran pour le visiteur, pas dans une console qu'il n'ouvrira jamais. 'console.error' et 'console.warn' restent permis pour ce qui relève du diagnostic.",
       "evidence": "",
-      "check": { "type": "regex_forbidden", "pattern": "\\bConsole\\.(Write|WriteLine)\\s*\\(", "exempt_units": [] }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "console\\.log\\s*\\("
+      }
     },
     {
-      "id": "no-commented-out-code",
-      "category": "cleanliness",
-      "severity": "info",
+      "id": "no-alert",
+      "category": "javascript",
+      "severity": "error",
       "source": "best_practice",
-      "description": "Do not leave commented-out lines of executable code in place; delete it (git history preserves it).",
+      "description": "Pas de 'alert()', 'confirm()' ni 'prompt()'. Ces fenêtres bloquent la page entière et ne se mettent pas en forme. Les messages passent par la zone d'état de l'interface.",
       "evidence": "",
-      "check": { "type": "regex_flagged", "pattern": "^\\s*//\\s*(if|for|while|var|return|[A-Za-z_]+\\.[A-Za-z_]+\\()" }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "\\b(?:alert|confirm|prompt)\\s*\\("
+      }
     },
     {
       "id": "no-empty-catch",
       "category": "error-handling",
       "severity": "error",
       "source": "best_practice",
-      "description": "Never swallow an exception silently. Every catch block must at minimum log via the project's LogError/LogCritical wrapper.",
-      "evidence": "",
-      "check": { "type": "regex_forbidden", "pattern": "catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}" }
+      "description": "Ne jamais avaler une erreur en silence. Un bloc 'catch' vide transforme une panne de Wikidata en page blanche sans explication — précisément ce que le plan interdit (§ 7).",
+      "evidence": "Découle de .claude/plan/coeval.md § 7 : « jamais une page blanche ».",
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "catch\\s*(?:\\([^)]*\\))?\\s*\\{\\s*\\}"
+      }
     },
     {
-      "id": "no-public-mutable-fields",
-      "category": "encapsulation",
+      "id": "no-commented-out-code",
+      "category": "hygiene",
+      "severity": "info",
+      "source": "best_practice",
+      "description": "Ne pas laisser de lignes de code mises en commentaire : les supprimer, l'historique Git les conserve. Un commentaire qui explique pourquoi le code est ainsi est au contraire le bienvenu.",
+      "evidence": "",
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "^\\s*//\\s*(?:const|let|function|if|for|while|return|await|import|export)\\b"
+      }
+    },
+    {
+      "id": "no-hardcoded-endpoint",
+      "category": "configuration",
       "severity": "warning",
-      "source": "best_practice",
-      "description": "Expose state via properties ('=>' expression-bodied where read-only), not public fields. Exempt: 'event' fields (C# events already restrict external access to +=/-=, which is not the uncontrolled-mutation problem this targets) and standalone 'readonly' fields (immutable after construction). In Unity, Inspector-exposed *Settings/ScriptableObject classes idiomatically use public fields — exempt them via exempt_type_suffix rather than annotating each one.",
+      "source": "decided",
+      "description": "L'adresse du service Wikidata vit dans js/config.js et nulle part ailleurs. Une adresse recopiée dans plusieurs fichiers est une adresse qu'on oubliera de changer. Cette règle signale donc aussi config.js lui-même : c'est la seule occurrence attendue, et elle se marque comme telle.",
       "evidence": "",
-      "check": { "type": "regex_forbidden", "pattern": "public\\s+(?!const\\b|static\\s+readonly\\b|readonly\\b|event\\b|class\\b|struct\\b|enum\\b|interface\\b)[A-Za-z_<>\\[\\],. ]+\\s+[A-Za-z_][A-Za-z0-9_]*\\s*;", "exempt_type_suffix": null }
+      "check": {
+        "type": "regex_flagged",
+        "pattern": "https://query\\.wikidata\\.org"
+      }
     },
     {
-      "id": "unit-manifest-present",
-      "category": "architecture",
-      "severity": "error",
-      "source": "observed",
-      "description": "Every unit directory must contain its manifest file (id/settings discovered by convention, not hardcoded). Enable only in a codebase that actually has a per-unit manifest, and set 'pattern' to its glob.",
+      "id": "no-tabs-in-html",
+      "category": "formatting",
+      "severity": "info",
+      "source": "decided",
+      "description": "Couvert par 'indentation-2-spaces', conservé ici comme rappel que les fichiers HTML et CSS suivent la même règle que le JavaScript. Pas de vérification propre.",
       "evidence": "",
       "enabled": false,
-      "check": { "type": "sibling_file_exists", "pattern": "*.json" }
-    },
-    {
-      "id": "public-api-surface-single-entrypoint",
-      "category": "architecture",
-      "severity": "error",
-      "source": "observed",
-      "description": "Each unit's public API must live only on its designated facade class. Manager/Settings/Callbacks/Abstract classes exist to support it but should not themselves be the integration surface exposed to consumers. Enable only in a codebase that has this facade convention.",
-      "evidence": "",
-      "enabled": false,
-      "check": { "type": "manual_or_heuristic", "heuristic": "flag public members on non-facade classes (Manager/Settings/Callbacks/Abstract suffix) that duplicate functionality already exposed on the facade" }
-    },
-    {
-      "id": "no-vendor-patching",
-      "category": "architecture",
-      "severity": "error",
-      "source": "best_practice",
-      "description": "Never modify vendored third-party files in place (see 'scope.vendor_detection'). If a bug looks like it's in vendor code, add or fix the wrapper around it instead. Not automatable from a snapshot — it needs the diff.",
-      "evidence": "",
-      "check": { "type": "manual_diff_review", "applies_to": "git diff against excluded vendor paths" }
+      "check": {
+        "type": "regex_forbidden",
+        "pattern": "\\t"
+      }
     }
   ]
 }

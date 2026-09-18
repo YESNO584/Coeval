@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coeval — qui vivait en même temps</title>
+  <link rel="stylesheet" href="css/coeval.css">
+</head>
+<body>
+  <header>
+    <h1>Coeval</h1>
+    <p class="sous-titre">Qui vivait en même temps que qui.</p>
+  </header>
+
+  <main>
+    <p id="etat" data-panne="non">Chargement…</p>
+    <p id="densite"></p>
+    <ul id="liste"></ul>
+  </main>
+
+  <footer>
+    <p>
+      Données de
+      <a href="https://www.wikidata.org" rel="noopener" target="_blank">Wikidata</a>,
+      sous licence CC0, interrogées en direct depuis votre navigateur.
+      Chaque nom renvoie à sa fiche source.
+    </p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -23,6 +23,46 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-18 — Lots L0 et L1 de Coeval
+
+- **Le vérificateur coupait toute ligne contenant une adresse web.**
+  `_strip_line_comments` faisait `line.split("//")` : le `//` de `https://`
+  était lu comme le début d'un commentaire, et tout ce qui suivait devenait
+  invisible à chaque règle. Découvert parce qu'une règle qui devait signaler
+  l'adresse de Wikidata ne signalait rien — *l'adresse contenait la séquence
+  qui la cachait*. Corrigé par un découpage qui tient compte des chaînes de
+  caractères. *Le motif à retenir :* une règle muette n'est pas une règle
+  respectée ; chercher pourquoi elle se tait.
+- **`top_level_directories` laissait `index.html` hors de toute unité.** Les
+  fichiers à la racine n'appartiennent à aucun dossier de premier niveau, donc
+  le vérificateur ne les lisait jamais — sur un projet dont la page est
+  justement à la racine. Basculé sur `single_unit`. *À vérifier sur tout
+  projet :* comparer le nombre de fichiers vérifiés au nombre de fichiers du
+  dépôt, pas seulement le nombre de constats.
+- **Le navigateur de ce conteneur n'atteint pas Wikidata.** Chromium charge
+  bien une page servie en local, mais un `fetch` vers l'extérieur échoue, et
+  la requête n'apparaît même pas dans `recentRelayFailures` du proxy : elle
+  n'arrive pas jusqu'à lui. Ni `--proxy-server`, ni l'option `proxy` de
+  Playwright, ni les variables d'environnement n'y changent quelque chose.
+  **Conséquence pratique :** une page qui interroge un service distant se
+  vérifie ici avec `page.route()` et une réponse enregistrée. L'autorisation
+  du service (en-tête `access-control-allow-origin`) se vérifie séparément,
+  en `curl`. Ne pas repasser une heure là-dessus.
+- **Attention au sens de `<-loopback>`** dans une liste de contournement de
+  proxy Chromium : il force le trafic local *à passer* par le proxy, ce qui
+  est l'inverse de ce que son nom suggère. Chromium contourne déjà le local
+  par défaut ; ne rien préciser est le bon réglage.
+- **Wikidata : trois faits mesurés qui commandent toute requête.** L'indice
+  `hint:rangeSafe` avec des dates typées fait passer une requête de 58 s
+  (échec) à 5,7 s ; demander la notoriété dans la même requête la remonte à
+  66 s, alors qu'elle coûte 0,76 s demandée à part sur une liste fermée ; et
+  deux requêtes simultanées suffisent à déclencher une limitation de débit.
+  Détail et tableau complet dans `.claude/plan/coeval.md` § 3.
+
+---
+
+
+
 ---
 
 ## Ce qui est encore vide dans cette configuration

@@ -1,0 +1,135 @@
+/* Mise en forme de Coeval. Sobre, lisible sur téléphone, claire et sombre. */
+
+:root {
+  color-scheme: light dark;
+  --fond: #faf9f7;
+  --carte: #ffffff;
+  --trait: #e2ded6;
+  --texte: #1b1916;
+  --gris: #6b655c;
+  --accent: #2f5d7c;
+  --alerte: #8a2b2b;
+  --alerte-fond: #fbeded;
+  --rayon: 10px;
+  --marge: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #16181a;
+    --carte: #1e2124;
+    --trait: #32373b;
+    --texte: #e8e6e2;
+    --gris: #a19a90;
+    --accent: #7fb3d3;
+    --alerte: #e4a0a0;
+    --alerte-fond: #2e1f1f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0 var(--marge) 3rem;
+  background: var(--fond);
+  color: var(--texte);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 0 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.sous-titre {
+  margin: 0.25rem 0 0;
+  color: var(--gris);
+}
+
+main,
+footer {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+#etat {
+  margin: 1rem 0 0.25rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  color: var(--gris);
+}
+
+#etat[data-panne="oui"] {
+  border-color: var(--alerte);
+  background: var(--alerte-fond);
+  color: var(--alerte);
+}
+
+#densite {
+  margin: 0 0 1rem;
+  color: var(--gris);
+  font-size: 0.85rem;
+}
+
+#liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entree {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  align-items: baseline;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  margin-bottom: 0.4rem;
+}
+
+.nom {
+  flex: 1 1 12rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nom:hover,
+.nom:focus {
+  text-decoration: underline;
+}
+
+.dates {
+  font-variant-numeric: tabular-nums;
+}
+
+.notoriete {
+  color: var(--gris);
+  font-size: 0.85rem;
+}
+
+footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--trait);
+  color: var(--gris);
+  font-size: 0.85rem;
+}
+
+footer a {
+  color: var(--accent);
+}
