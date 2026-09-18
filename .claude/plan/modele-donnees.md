@@ -80,6 +80,8 @@ erDiagram
     PERSONNE ||--o{ PERSONNE_RELIGION : ""
     PERSONNE ||--o{ PERSONNE_OEUVRE : ""
     PERSONNE ||--o{ PERSONNE_EVENEMENT : ""
+    PERSONNE ||--o{ PERSONNE_PERSONNE : "sujet"
+    PERSONNE ||--o{ PERSONNE_PERSONNE : "objet"
 
     LIEU ||--o{ PERSONNE_LIEU : ""
     LIEU ||--o{ LIEU_APPARTENANCE : "enfant"
@@ -114,14 +116,40 @@ Chacune porte au minimum : `id`, `nom` (la forme d'usage en français),
 | Table | Ce qu'elle contient | Colonnes propres |
 |---|---|---|
 | `personne` | Un être humain | `sexe` (facultatif, pour mesurer le déséquilibre, pas pour l'imposer) |
-| `lieu` | Une entité géographique ou politique | `type_lieu_id`, `creation_annee`, `creation_precision`, `fin_annee`, `fin_precision`, `latitude`, `longitude` |
-| `type_lieu` | Continent, pays, région, ville, État disparu… | `rang` (pour ordonner du plus large au plus étroit) |
+| `lieu` | Une entité géographique ou politique, du continent à l'adresse | `type_lieu_id`, `creation_annee`, `creation_precision`, `fin_annee`, `fin_precision`, `latitude`, `longitude`, `adresse_texte` |
+| `type_lieu` | Du continent à l'adresse — voir § 3 bis | `rang` (du plus large au plus étroit) |
 | `evenement` | Ce qui arrive : bataille, traité, révolution, sacre | `type_evenement`, `debut_*`, `fin_*`, `ponctuel` (vrai si un instant) |
 | `oeuvre` | Un livre, un tableau, une symphonie, un traité | `type_oeuvre`, `creation_*` |
 | `langue` | Une langue | `code_iso` (facultatif) |
 | `religion` | Une religion ou un courant | `religion_parent_id` (le luthéranisme sous le christianisme) |
 | `role` | Ce qu'on **est** ou ce qu'on **occupe** | `nature` : `metier` (philosophe) ou `fonction` (roi de France) |
 | `periode` | Une époque nommée : Renaissance, Néolithique | `debut_*`, `fin_*`, `portee_lieu_id` |
+
+### 3 bis — L'échelle des lieux descend jusqu'à l'adresse
+
+`type_lieu` porte un `rang`, du plus large au plus étroit. Une seule table
+`lieu` couvre toute l'échelle, chaque niveau étant rattaché au précédent par
+`lieu_appartenance` — datée, comme tout le reste.
+
+| Rang | Type | Exemple |
+|---:|---|---|
+| 10 | continent | Europe |
+| 20 | ensemble politique | Saint-Empire romain germanique |
+| 30 | pays / État | France, Gaule |
+| 40 | région | Alsace |
+| 50 | ville | Paris |
+| 60 | quartier | Le Marais |
+| 70 | **adresse** | 12 rue de Rivoli |
+
+**Une adresse est un lieu comme un autre**, de type `adresse` : son `nom` porte
+le texte tel qu'on l'écrit, et `lieu_appartenance` la rattache à son quartier
+ou à sa ville. La colonne `adresse_texte` garde la forme brute quand elle
+diffère du nom d'usage.
+
+**Ce que cette échelle rend possible, et qu'une hiérarchie figée interdirait :**
+une adresse peut être rattachée directement à une ville quand le quartier est
+inconnu. Les rangs servent à ordonner l'affichage, pas à imposer un chemin
+complet.
 
 **Pourquoi `role` réunit métier et fonction.** « Philosophe » et « roi de
 France » se posent tous deux sur une personne pendant un intervalle. Les
@@ -146,7 +174,19 @@ Toutes portent : `id`, `debut_annee`, `debut_precision`, `fin_annee`,
 | `evenement_composition` | événement ↔ événement | Austerlitz **fait partie de** la guerre de la Troisième Coalition |
 | `lieu_appartenance` | lieu ↔ lieu | **Remplace la colonne `Parent`.** Datée : l'Alsace change de parent |
 | `lieu_succession` | lieu ↔ lieu | `nature` : `succede`, `scission`, `fusion`, `renommage` |
+| `personne_personne` | personne ↔ personne | `nature` : `parent`, `conjoint`, `fratrie`, `maitre`, `eleve`, `allie`, `adversaire` |
 | `entite_periode` | n'importe quelle entité ↔ période | rattache une vie, une œuvre, un lieu à une époque nommée |
+
+### La table entre personnes porte un sens de lecture
+
+`personne_personne` a un `sujet_id` et un `objet_id`, et le sens compte :
+`nature = parent` se lit **« sujet est le parent de objet »**. Une seule ligne
+suffit ; l'inverse (« objet est l'enfant de sujet ») se déduit et n'est jamais
+stocké — deux lignes pour un même fait finissent toujours par diverger.
+
+Ce qu'elle ouvre : les dynasties, les écoles de pensée, les alliances. Ce
+qu'elle exige : les dates, comme partout. Un mariage a un début et souvent une
+fin ; un lien de filiation n'en a pas.
 
 ### La naissance et la mort ne sont pas des colonnes de `personne`
 
@@ -164,6 +204,28 @@ fois, avec une **vue** `personne_vie` qui expose `personne_id`,
 `naissance_annee`, `naissance_precision`, `mort_annee`, `mort_precision`, en ne
 gardant que les lignes `retenu = 1`.
 
+### L'origine d'une œuvre se déduit, elle ne se stocke pas
+
+**Décision prise le 2026-09-18 :** une œuvre n'a pas ses propres liens vers des
+lieux. Son origine se calcule : on prend sa date de création, on regarde où son
+auteur se trouvait à cette date dans `personne_lieu`, et c'est là que l'œuvre
+est née.
+
+**Ce qui est gagné :** aucune donnée en double, donc aucune contradiction
+possible entre le lieu de l'œuvre et celui de son auteur.
+
+**Ce qu'il faut assumer, et dire à l'écran :** ce calcul échouera souvent.
+
+| Cas | Ce que l'application doit afficher |
+|---|---|
+| L'auteur est à deux endroits à cette date | les deux, ou « indéterminé » — jamais un seul choisi au hasard |
+| La date de création est imprécise (« vers 1650 ») | la résidence de la période, avec la mention de l'imprécision |
+| Aucune résidence connue à cette date | **« indéterminé »**, pas le dernier lieu connu |
+| Plusieurs auteurs | autant d'origines possibles |
+
+La règle du projet s'applique ici comme ailleurs : **ce qui manque s'affiche,
+il ne se devine pas.**
+
 ## 5. Les tables transverses
 
 | Table | Colonnes | Rôle |
@@ -180,7 +242,7 @@ gardant que les lignes `retenu = 1`.
 | *(demandé)* « succède » | `lieu_succession`, avec sa nature |
 | `Lieu.Date de Création` / `Date de Fin` | conservées, mais en année + précision (règle R1) |
 | `Type de Lieu` | conservée, plus une colonne `rang` |
-| `Origines` | à trancher — voir § 7 |
+| `Origines` | `personne_lieu`, `nature = ascendance` — « sa famille vient de là », distinct de « il y est né » |
 | `Personnage.Langues Parlées` | `personne_langue` |
 | `Personnage.Lieues de Vie` | `personne_lieu`, `nature = residence` |
 | `Personnage.Rôles` | `personne_role` |
@@ -191,19 +253,26 @@ gardant que les lignes `retenu = 1`.
 
 Au passage : `Lieues de Vie` s'écrit `Lieux de Vie`.
 
-## 7. Ce que vous seul pouvez trancher
+## 7. Les quatre décisions, tranchées le 2026-09-18
 
-1. **Que veut dire « Origines » ?** Lieu + Personnage sans date ni nature : est-ce
-   le lieu de naissance, l'ascendance, la nationalité ? Si c'est la naissance
-   ou la citoyenneté, la table disparaît dans `personne_lieu`. Si c'est
-   l'ascendance — « d'origine arménienne » —, c'est autre chose et elle reste.
-2. **Faut-il une table `personne_personne`** pour la parenté, le maître et
-   l'élève, l'alliance ? Le modèle ne la contient pas. Elle est facile à
-   ajouter et ouvre beaucoup (les dynasties, les écoles de pensée).
-3. **Les œuvres méritent-elles leurs propres liens** vers des lieux et des
-   événements, ou suffit-il de passer par leur auteur ?
-4. **Jusqu'où descendre dans les types de lieux ?** Continent, pays, région,
-   ville — ou aussi quartier, bâtiment ?
+| Question | Décision |
+|---|---|
+| Que veut dire « Origines » ? | **L'ascendance.** Devient `personne_lieu`, `nature = ascendance` : la famille vient de là, ce qui n'est ni la naissance ni la nationalité. La généalogie proprement dite passe par `personne_personne`. |
+| Faut-il une table entre personnes ? | **Oui.** `personne_personne`, avec un sens de lecture. |
+| Les œuvres ont-elles leurs propres lieux ? | **Non.** Leur origine se déduit de leur date de création et de l'endroit où leur auteur se trouvait alors. Le calcul échoue souvent, et doit alors dire « indéterminé ». |
+| Jusqu'où descendre dans les lieux ? | **Jusqu'à l'adresse**, en texte, rattachée à un quartier ou à une ville. |
+
+### Ce qui reste ouvert
+
+- **La nationalité et l'ascendance se ressemblent mais ne sont pas la même
+  chose.** Le modèle les sépare par la colonne `nature` de `personne_lieu`
+  (`citoyennete` contre `ascendance`). Une source qui ne distingue pas les deux
+  — et Wikidata n'a pas de propriété propre à l'ascendance — obligera à choisir
+  à l'import. À décider quand la première source sera branchée.
+- **« D'origine arménienne » désigne parfois un peuple plutôt qu'un lieu.**
+  Tant qu'il n'y a pas de table des peuples, l'ascendance pointe vers le lieu
+  qui s'en rapproche le plus. C'est une approximation, et elle est notée ici
+  pour ne pas être oubliée.
 
 ## 8. Ce que je n'ai pas fait, et pourquoi
 
