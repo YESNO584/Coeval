@@ -187,7 +187,7 @@ Toutes portent : `id`, `debut_annee`, `debut_precision`, `fin_annee`,
 
 | Table | Relie | Colonne qui précise la nature du lien |
 |---|---|---|
-| `personne_lieu` | personne ↔ lieu | `nature` : `naissance`, `mort`, `residence`, `sepulture`, `citoyennete` |
+| `personne_lieu` | personne ↔ lieu | `nature` : `naissance`, `mort`, `residence`, `sejour`, `exil`, `sepulture`, `citoyennete`, `ascendance` — voir § 4 bis |
 | `personne_role` | personne ↔ rôle | `lieu_id` facultatif — « roi **de France** » |
 | `personne_langue` | personne ↔ langue | `nature` : `maternelle`, `ecrit`, `parle` |
 | `personne_religion` | personne ↔ religion | `nature` : `pratique`, `conversion`, `abjuration` |
@@ -199,6 +199,40 @@ Toutes portent : `id`, `debut_annee`, `debut_precision`, `fin_annee`,
 | `lieu_succession` | lieu ↔ lieu | `nature` : `succede`, `scission`, `fusion`, `renommage` |
 | `personne_personne` | personne ↔ personne | `nature` : `parent`, `conjoint`, `fratrie`, `maitre`, `eleve`, `allie`, `adversaire` |
 | `entite_periode` | n'importe quelle entité ↔ période | rattache une vie, une œuvre, un lieu à une époque nommée |
+
+### 4 bis — Le parcours d'une personne dans l'espace et le temps
+
+`personne_lieu` porte déjà un début et une fin, comme toutes les tables de
+lien. **Une vie entière s'y écrit donc ligne par ligne**, chacune avec son
+lieu, ses dates et sa nature :
+
+| nature | dates | lieu | description |
+|---|---|---|---|
+| `naissance` | 1769, jour | Ajaccio | |
+| `residence` | 1779 → 1785 | Brienne-le-Château | école militaire |
+| `sejour` | 1798 → 1799 | Égypte | campagne |
+| `residence` | 1804 → 1814 | Paris | |
+| `exil` | 1815 → 1821 | Sainte-Hélène | |
+| `mort` | 1821, jour | Sainte-Hélène | |
+
+**Trié par date, cela donne l'itinéraire.** C'est ce qui permettra plus tard de
+répondre à « où était-il en 1800 ? » — la question dont dépend le calcul de
+l'origine d'une œuvre — et de tracer un déplacement sur une carte, le jour où
+il y en aura une.
+
+**Trois natures distinguées, parce qu'elles ne disent pas la même chose :**
+
+- `residence` — il y habite. C'est là qu'il faut chercher son adresse.
+- `sejour` — il y passe, sans s'y installer : une campagne, un voyage, un
+  congrès. Confondre les deux ferait de tout voyageur un habitant.
+- `exil` — il y est contraint. C'est une résidence, mais subie, et la nuance
+  compte assez souvent en histoire pour mériter son mot.
+
+**Les dates manquantes ne se comblent pas.** Une résidence sans date de fin
+signifie « on ne sait pas quand il est parti », **jamais** « il y est resté
+jusqu'à sa mort ». C'est la même règle que pour les règnes, où la traiter à
+l'envers avait fait entrer un souverain de 2599 av. J.-C. dans une fenêtre du
+XVIII<sup>e</sup> siècle.
 
 ### La table entre personnes porte un sens de lecture
 
@@ -267,7 +301,7 @@ il ne se devine pas.**
 | `Type de Lieu` | conservée, plus une colonne `rang` |
 | `Origines` | `personne_lieu`, `nature = ascendance` — « sa famille vient de là », distinct de « il y est né » |
 | `Personnage.Langues Parlées` | `personne_langue` |
-| `Personnage.Lieues de Vie` | `personne_lieu`, `nature = residence` |
+| `Personnage.Lieues de Vie` | `personne_lieu`, `nature = residence`, `sejour` ou `exil` selon le cas |
 | `Personnage.Rôles` | `personne_role` |
 | `Personnage.Œuvres` | `personne_oeuvre` |
 | `Personnage.Evenements` | `personne_evenement` |
