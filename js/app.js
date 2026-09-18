@@ -1,10 +1,10 @@
 // Assemblage : la barre de filtres, le chargement, le regroupement et la
 // frise. Ce fichier ne sait rien de SPARQL ; il branche les morceaux.
 
-import { VUE_INITIALE, QUOTA_PAR_SIECLE, GROUPEMENTS } from "./config.js";
+import { VUE_INITIALE, QUOTA_PAR_SIECLE } from "./config.js";
 import { installer } from "./filters.js";
 import { chargerTout } from "./chargement.js";
-import { trierParNotoriete, bornes } from "./model.js";
+import { trierParNotoriete, bornes, appliquerQuota } from "./model.js";
 import { grouper } from "./groupes.js";
 import { dessiner, mettreEnEvidence, ZOOM_MIN, ZOOM_MAX } from "./timeline.js";
 
@@ -29,9 +29,16 @@ const etat = {
 
 let filtres = null;
 
+// L'attente se voit : une roue qui tourne à côté du texte de l'étape. Une
+// page immobile pendant vingt secondes ressemble à une panne.
 function annoncer(texte, enPanne) {
-  zoneEtat.textContent = texte;
+  zoneEtat.replaceChildren();
+  if (etat.occupe) {
+    zoneEtat.append(creer("span", "roue"));
+  }
+  zoneEtat.append(creer("span", "texte-etat", texte));
   zoneEtat.dataset.panne = enPanne === true ? "oui" : "non";
+  zoneEtat.dataset.occupe = etat.occupe ? "oui" : "non";
 }
 
 function creer(balise, classe, texte) {
@@ -101,34 +108,6 @@ function redessiner(bandes) {
   return mesures;
 }
 
-// Le quota du plan (§ 6.1) : les N plus notoires **par catégorie** et par
-// siècle. Appliqué globalement, il effaçait une catégorie entière — mesuré
-// le 2026-09-18, les événements disparaissaient tous, leur notoriété étant
-// bien plus basse que celle des personnes. Un quota qui supprime une
-// catégorie sans le dire est pire que pas de quota.
-function appliquerQuota(entrees) {
-  const siecles = Math.max(1, Math.ceil((etat.max - etat.min) / 100));
-  const plafond = QUOTA_PAR_SIECLE * siecles;
-  const parCategorie = new Map();
-  for (const entree of entrees) {
-    const cle = entree.categories[0] ?? "autre";
-    const connues = parCategorie.get(cle);
-    if (connues === undefined) {
-      parCategorie.set(cle, [entree]);
-    } else {
-      connues.push(entree);
-    }
-  }
-  const gardees = [];
-  let horsQuota = 0;
-  for (const membres of parCategorie.values()) {
-    const classees = trierParNotoriete(membres);
-    gardees.push(...classees.slice(0, plafond));
-    horsQuota += Math.max(classees.length - plafond, 0);
-  }
-  return { gardees: trierParNotoriete(gardees), horsQuota, plafond };
-}
-
 // Ne touche pas au réseau : ne fait que trier ce qui est déjà chargé.
 function affiner() {
   const valeurs = filtres.valeurs();
@@ -146,12 +125,12 @@ function affiner() {
     }
   }
 
-  const { gardees, horsQuota, plafond } = appliquerQuota(retenues);
+  const { gardees, horsQuota, plafond } = appliquerQuota(
+    retenues, QUOTA_PAR_SIECLE, etat.max - etat.min
+  );
   etat.affichees = gardees;
 
-  const { bandes, regroupees, indeterminees } = grouper(
-    etat.affichees, valeurs.groupement, valeurs.largeur
-  );
+  const { bandes, regroupees, indeterminees } = grouper(etat.affichees, valeurs.groupement);
   filtres.majChoix(etat.chargees);
   const mesures = redessiner(bandes);
 
@@ -192,6 +171,8 @@ async function recharger() {
     return;
   }
   etat.occupe = true;
+  filtres.verrouiller(true);
+  annoncer("Préparation des requêtes…");
   try {
     const { entrees, ecartees } = await chargerTout(valeurs, annoncer);
     etat.chargees = entrees;
@@ -214,6 +195,12 @@ async function recharger() {
     console.error(erreur);
   } finally {
     etat.occupe = false;
+    filtres.verrouiller(false);
+    zoneEtat.dataset.occupe = "non";
+    const roue = zoneEtat.querySelector(".roue");
+    if (roue !== null) {
+      roue.remove();
+    }
   }
 }
 
@@ -222,7 +209,7 @@ function grossir(facteur) {
   const centre = (cadre.scrollLeft + cadre.clientWidth / 2) / avant;
   etat.pixelsParAnnee = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, avant * facteur));
   const valeurs = filtres.valeurs();
-  redessiner(grouper(etat.affichees, valeurs.groupement, valeurs.largeur).bandes);
+  redessiner(grouper(etat.affichees, valeurs.groupement).bandes);
   cadre.scrollLeft = centre * etat.pixelsParAnnee - cadre.clientWidth / 2;
 }
 
@@ -233,8 +220,7 @@ filtres = installer(zoneFiltres, {
   debut: VUE_INITIALE.debut,
   fin: VUE_INITIALE.fin,
   categories: VUE_INITIALE.categories,
-  groupement: VUE_INITIALE.groupement,
-  largeur: GROUPEMENTS.fourchette.largeur
-}, recharger, affiner);
+  groupement: VUE_INITIALE.groupement
+}, recharger);
 
 recharger();

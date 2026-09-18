@@ -23,6 +23,20 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-18 — Lot L4 bis de Coeval (formulaire)
+
+- **Ouvrir une borne de saisie oblige à revoir ce qui la consomme.** Accepter
+  l'année -300000 était une ligne de configuration ; mais le découpage en
+  tranches de vingt-cinq ans en aurait fait douze mille requêtes en file. Une
+  limite d'interface n'est jamais seulement une limite d'interface. *Réflexe :*
+  pour chaque borne élargie, chercher qui divise, boucle ou multiplie dessus.
+- **Un chargement différé se vérifie en comptant les requêtes, pas en
+  regardant l'écran.** « Rien ne bouge » peut vouloir dire « rien n'est
+  demandé » ou « tout est demandé et le résultat est identique ». Seul le
+  compteur de requêtes distingue les deux.
+
+---
+
 ## 2026-09-18 — Lot L4 de Coeval (filtres et regroupement)
 
 - **`!BOUND(?fin)` dans un filtre de date laisse tout passer.** « La fin est

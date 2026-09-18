@@ -1,13 +1,11 @@
 // La barre de filtres.
 //
-// Deux sortes de filtres, qui ne coûtent pas la même chose :
-//   - ceux qui changent ce qu'il faut demander à Wikidata — la fenêtre de
-//     temps et les catégories. Ils déclenchent des requêtes ;
-//   - ceux qui ne font que trier ce qui est déjà là — le pays, le
-//     regroupement, le choix d'une entrée comme centre. Ils sont instantanés.
-// Les mélanger enverrait des requêtes pour rien.
+// Rien ne part avant le clic sur « Charger ». Changer une case ou un menu ne
+// fait que noter l'intention : la frise ne bouge pas, aucune requête ne
+// s'envoie. C'est ce qui permet de composer plusieurs filtres tranquillement
+// avant de payer une seule fois le prix du chargement.
 
-import { CATEGORIES, GROUPEMENTS } from "./config.js";
+import { CATEGORIES, GROUPEMENTS, MOTIF_ANNEE, ANNEE_MIN, ANNEE_MAX } from "./config.js";
 
 function creer(balise, attributs, texte) {
   const element = document.createElement(balise);
@@ -24,9 +22,22 @@ function creer(balise, attributs, texte) {
   return element;
 }
 
-function champNombre(id, etiquette, valeur) {
+function champTexte(id, etiquette, valeur, motif, aide) {
   const bloc = creer("label", { class: "champ", for: id }, etiquette);
-  const entree = creer("input", { id, type: "number", step: "1", value: valeur });
+  const entree = creer("input", {
+    id,
+    type: "text",
+    inputmode: motif === undefined ? "text" : "numeric",
+    autocomplete: "off",
+    value: valeur
+  });
+  if (motif !== undefined) {
+    entree.setAttribute("pattern", motif.source);
+  }
+  if (aide !== undefined) {
+    entree.setAttribute("title", aide);
+    entree.setAttribute("placeholder", aide);
+  }
   bloc.append(entree);
   return { bloc, entree };
 }
@@ -45,16 +56,24 @@ function menu(id, etiquette, options, choisi) {
   return { bloc, liste };
 }
 
-// Construit la barre et renvoie de quoi la lire et la mettre à jour.
-export function installer(racine, depart, surRecharger, surAffiner) {
+function anneeValide(texte) {
+  if (!MOTIF_ANNEE.test(texte)) {
+    return null;
+  }
+  const valeur = Number.parseInt(texte, 10);
+  return valeur >= ANNEE_MIN && valeur <= ANNEE_MAX ? valeur : null;
+}
+
+export function installer(racine, depart, surCharger) {
   racine.replaceChildren();
 
+  const aideAnnee = `de ${ANNEE_MIN} à ${ANNEE_MAX}, négatif = avant J.-C.`;
+  const soucAnnee = `Année invalide : ${aideAnnee}`;
   const periode = creer("div", { class: "groupe-filtre" });
   periode.append(creer("span", { class: "titre-filtre" }, "Période"));
-  const debut = champNombre("filtre-debut", "de", depart.debut);
-  const fin = champNombre("filtre-fin", "à", depart.fin);
-  const appliquer = creer("button", { type: "button", id: "filtre-appliquer" }, "Charger");
-  periode.append(debut.bloc, fin.bloc, appliquer);
+  const debut = champTexte("filtre-debut", "de", depart.debut, MOTIF_ANNEE, aideAnnee);
+  const fin = champTexte("filtre-fin", "à", depart.fin, MOTIF_ANNEE, aideAnnee);
+  periode.append(debut.bloc, fin.bloc);
 
   const categories = creer("div", { class: "groupe-filtre" });
   categories.append(creer("span", { class: "titre-filtre" }, "Catégories"));
@@ -77,60 +96,87 @@ export function installer(racine, depart, surRecharger, surAffiner) {
     Object.entries(GROUPEMENTS).map(([cle, valeur]) => [cle, valeur.nom]),
     depart.groupement
   );
-  const largeur = menu(
-    "filtre-largeur",
-    "largeur",
-    GROUPEMENTS.fourchette.largeurs.map((n) => [String(n), `${n} ans`]),
-    String(GROUPEMENTS.fourchette.largeur)
-  );
-  const recherche = creer("label", { class: "champ", for: "filtre-centre" }, "centré sur");
-  const centre = creer("input", {
-    id: "filtre-centre",
-    type: "search",
-    list: "liste-entrees",
-    placeholder: "une personne ou un événement"
-  });
-  recherche.append(centre);
+  const centre = champTexte("filtre-centre", "centré sur", "", undefined,
+    "une personne ou un événement");
+  centre.entree.setAttribute("list", "liste-entrees");
   const catalogue = creer("datalist", { id: "liste-entrees" });
-  affinage.append(pays.bloc, groupement.bloc, largeur.bloc, recherche, catalogue);
+  affinage.append(pays.bloc, groupement.bloc, centre.bloc, catalogue);
 
-  racine.append(periode, categories, affinage);
+  // Le bouton ferme le panneau, sur sa propre ligne : c'est le dernier geste,
+  // et le seul qui déclenche quelque chose.
+  const pied = creer("div", { class: "pied-filtres" });
+  const message = creer("p", { class: "message-filtres", role: "status" }, "");
+  const bouton = creer("button", { type: "button", id: "filtre-charger" }, "Charger");
+  pied.append(message, bouton);
 
-  function majLargeur() {
-    largeur.bloc.hidden = groupement.liste.value !== "fourchette";
+  racine.append(periode, categories, affinage, pied);
+
+  const champsAnnee = [debut.entree, fin.entree];
+
+  function verifier() {
+    const a = anneeValide(debut.entree.value.trim());
+    const b = anneeValide(fin.entree.value.trim());
+    for (const [entree, valeur] of [[debut.entree, a], [fin.entree, b]]) {
+      entree.classList.toggle("invalide", valeur === null);
+    }
+    const choisies = [...cases.values()].filter((boite) => boite.checked).length;
+
+    let souci = "";
+    if (a === null || b === null) {
+      souci = soucAnnee;
+    } else if (a > b) {
+      souci = "La date de début est postérieure à la date de fin.";
+    } else if (choisies === 0) {
+      souci = "Choisissez au moins une catégorie.";
+    }
+    message.textContent = souci;
+    bouton.disabled = souci !== "";
+    return souci === "";
   }
-  majLargeur();
 
-  appliquer.addEventListener("click", () => surRecharger());
+  for (const entree of champsAnnee) {
+    entree.addEventListener("input", verifier);
+  }
   for (const boite of cases.values()) {
-    boite.addEventListener("change", () => surRecharger());
+    boite.addEventListener("change", verifier);
   }
-  for (const controle of [pays.liste, groupement.liste, largeur.liste]) {
-    controle.addEventListener("change", () => {
-      majLargeur();
-      surAffiner();
-    });
-  }
-  centre.addEventListener("change", () => surAffiner());
+  bouton.addEventListener("click", () => {
+    if (verifier()) {
+      surCharger();
+    }
+  });
+  verifier();
+
+  const commandes = [
+    ...champsAnnee, ...cases.values(), pays.liste, groupement.liste, centre.entree
+  ];
 
   return {
     valeurs() {
-      const choisies = [...cases.entries()]
-        .filter(([, boite]) => boite.checked)
-        .map(([cle]) => cle);
       return {
-        debut: Number.parseInt(debut.entree.value, 10),
-        fin: Number.parseInt(fin.entree.value, 10),
-        categories: choisies,
+        debut: anneeValide(debut.entree.value.trim()),
+        fin: anneeValide(fin.entree.value.trim()),
+        categories: [...cases.entries()]
+          .filter(([, boite]) => boite.checked)
+          .map(([cle]) => cle),
         pays: pays.liste.value,
         groupement: groupement.liste.value,
-        largeur: Number.parseInt(largeur.liste.value, 10),
-        centre: centre.value.trim()
+        centre: centre.entree.value.trim()
       };
     },
 
-    // Les listes de pays et de noms viennent des données chargées : on ne
-    // propose jamais un filtre qui ne trouverait rien.
+    // Pendant un chargement, tout est verrouillé : sans cela un second clic
+    // lancerait une seconde salve de requêtes par-dessus la première.
+    verrouiller(occupe) {
+      for (const commande of commandes) {
+        commande.disabled = occupe;
+      }
+      bouton.disabled = occupe || !verifier();
+      bouton.textContent = occupe ? "Chargement…" : "Charger";
+    },
+
+    // Les listes proposées viennent des données chargées : on ne propose
+    // jamais un filtre qui ne trouverait rien.
     majChoix(entrees) {
       const noms = new Set();
       const tous = new Set();
@@ -151,11 +197,6 @@ export function installer(racine, depart, surRecharger, surAffiner) {
       for (const nom of [...noms].sort((a, b) => a.localeCompare(b, "fr"))) {
         catalogue.append(creer("option", { value: nom }));
       }
-    },
-
-    ecrireFenetre(min, max) {
-      debut.entree.value = String(min);
-      fin.entree.value = String(max);
     }
   };
 }

@@ -62,6 +62,24 @@ export const VUE_INITIALE = {
 // une requête qui ramène des lignes.
 export const TRANCHE_ANS = 25;
 
+// Plafond du nombre de tranches.
+//
+// Sans lui, une fenêtre de 300 000 ans — permise, la préhistoire est un
+// sujet — donnerait douze mille requêtes envoyées l'une après l'autre. Au
+// delà de ce plafond les tranches s'élargissent au lieu de se multiplier :
+// les périodes très anciennes sont si peu documentées qu'une tranche large
+// y ramène peu de chose, et donc répond vite.
+export const MAX_TRANCHES = 8;
+
+// --- Saisie ---
+
+// Une année : jusqu'à six chiffres, signe moins accepté pour « avant J.-C. ».
+// -300000 est la borne théorique demandée ; rien d'aussi ancien n'est daté à
+// l'année dans Wikidata, mais rien n'oblige le champ à le refuser.
+export const MOTIF_ANNEE = /^-?\d{1,6}$/;
+export const ANNEE_MIN = -300000;
+export const ANNEE_MAX = 3000;
+
 // Plafond de sécurité par requête. Mesuré : 400 lignes reviennent en 3,1 s.
 // Attention : 400 lignes ne font pas 400 personnes. Wikidata porte plusieurs
 // dates concurrentes par personne, et la requête les multiplie — 400 lignes
@@ -89,6 +107,5 @@ export const GROUPEMENTS = {
   aucun: { nom: "Aucun" },
   categorie: { nom: "Catégorie" },
   pays: { nom: "Pays" },
-  siecle: { nom: "Siècle" },
-  fourchette: { nom: "Fourchette", largeurs: [25, 50, 100, 250], largeur: 50 }
+  siecle: { nom: "Siècle" }
 };

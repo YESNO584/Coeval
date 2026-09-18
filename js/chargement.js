@@ -10,7 +10,12 @@
 // refuser le service. La file de js/sparql.js s'en charge, et ce fichier ne
 // la contourne jamais.
 
-import { CATEGORIES, LIMITE_RESULTATS, TRANCHE_ANS } from "./config.js";
+import {
+  CATEGORIES,
+  LIMITE_RESULTATS,
+  TRANCHE_ANS,
+  MAX_TRANCHES
+} from "./config.js";
 import {
   personnesVivantes,
   souverainsRegnants,
@@ -45,11 +50,14 @@ async function parLots(identifiants, fabriquer, prefixe) {
   return lignes;
 }
 
-// Découpe une fenêtre en tranches d'au plus TRANCHE_ANS années.
+// Découpe une fenêtre en tranches. Vingt-cinq ans par défaut — au-delà du
+// plafond de tranches, elles s'élargissent plutôt que de se multiplier.
 export function tranches(debut, fin) {
+  const etendue = Math.max(fin - debut, 1);
+  const largeur = Math.max(TRANCHE_ANS, Math.ceil(etendue / MAX_TRANCHES));
   const morceaux = [];
-  for (let borne = debut; borne < fin; borne += TRANCHE_ANS) {
-    morceaux.push({ debut: borne, fin: Math.min(borne + TRANCHE_ANS, fin) });
+  for (let borne = debut; borne < fin; borne += largeur) {
+    morceaux.push({ debut: borne, fin: Math.min(borne + largeur, fin) });
   }
   return morceaux.length === 0 ? [{ debut, fin }] : morceaux;
 }

@@ -168,3 +168,31 @@ export function ajouterPays(entrees, lignes, cle) {
   }
   return entrees;
 }
+
+// Le quota du plan (§ 6.1) : les N plus notoires **par catégorie** et par
+// siècle. Appliqué globalement, il effaçait une catégorie entière — mesuré
+// le 2026-09-18, les événements disparaissaient tous, leur notoriété étant
+// bien plus basse que celle des personnes. Un quota qui supprime une
+// catégorie sans le dire est pire que pas de quota.
+export function appliquerQuota(entrees, quota, etendue) {
+  const siecles = Math.max(1, Math.ceil(etendue / 100));
+  const plafond = quota * siecles;
+  const parCategorie = new Map();
+  for (const entree of entrees) {
+    const cle = entree.categories[0] ?? "autre";
+    const connues = parCategorie.get(cle);
+    if (connues === undefined) {
+      parCategorie.set(cle, [entree]);
+    } else {
+      connues.push(entree);
+    }
+  }
+  const gardees = [];
+  let horsQuota = 0;
+  for (const membres of parCategorie.values()) {
+    const classees = trierParNotoriete(membres);
+    gardees.push(...classees.slice(0, plafond));
+    horsQuota += Math.max(classees.length - plafond, 0);
+  }
+  return { gardees: trierParNotoriete(gardees), horsQuota, plafond };
+}

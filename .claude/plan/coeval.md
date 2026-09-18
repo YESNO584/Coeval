@@ -468,6 +468,32 @@ colonne (5 788 px) correspond à celle de la frise moins l'axe (5 822 px) ;
   compter, ce qui rendait la page entièrement blanche. Toutes les lectures de
   réponse passent maintenant par une aide qui ne lève jamais d'erreur.
 
+### L4 bis — La barre de filtres se comporte comme un formulaire ✅ 2026-09-18
+Le bouton « Charger » ferme le panneau, sur sa propre ligne, et devient le
+seul déclencheur : composer plusieurs filtres ne coûte rien, on ne paie
+qu'une fois, au clic. Pendant le chargement, une roue tourne à côté du texte
+de l'étape et toutes les commandes sont verrouillées — sans quoi un second
+clic lancerait une salve de requêtes par-dessus la première.
+
+Les champs d'année acceptent `-300000` à `3000`, le signe moins valant « avant
+J.-C. ». Une saisie fautive désactive le bouton et dit pourquoi, de même
+qu'un début postérieur à la fin. Le champ « centré sur » accepte n'importe
+quel texte.
+
+Le réglage de largeur du regroupement disparaît : les bornes viennent des
+dates saisies. Restent quatre regroupements — aucun, catégorie, pays, siècle.
+
+**Une conséquence qu'il a fallu traiter :** une fenêtre de 300 000 ans
+donnerait douze mille tranches de vingt-cinq ans, donc douze mille requêtes
+en file. Le nombre de tranches est plafonné à huit ; au-delà elles
+s'élargissent au lieu de se multiplier. Les périodes très anciennes sont si
+peu documentées qu'une tranche large y répond vite.
+
+**Mesuré dans Chromium :** changer trois filtres sans cliquer envoie
+**0 requête** et ne redessine rien ; le clic redessine une fois ; la roue
+apparaît pendant et disparaît après ; `12a` est refusé avec son motif, `-44`
+accepté, `1900 → 1800` refusé ; aucune erreur en console.
+
 ### L5 — La fabrique
 `socle/construire.py`, `socle/requetes/`, `socle/perimetre.json`, le workflow,
 le refus de publier des données vides, l'empreinte des règles.

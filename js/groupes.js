@@ -42,15 +42,10 @@ function nomDuSiecle(annee) {
   return `${romain(Math.floor((annee - 1) / 100) + 1)}e siècle`;
 }
 
-function nomDeLaTranche(annee, largeur) {
-  const bas = Math.floor(annee / largeur) * largeur;
-  return `${bas} – ${bas + largeur - 1}`;
-}
-
 // Les valeurs d'une entrée pour une dimension donnée. Plusieurs sont
 // possibles : un roi de France et de Navarre appartient aux deux bandes,
 // et l'y montrer deux fois est plus juste que d'en choisir une au hasard.
-function valeurs(entree, dimension, largeur) {
+function valeurs(entree, dimension) {
   if (dimension === "pays") {
     return entree.pays.length === 0 ? [] : entree.pays;
   }
@@ -63,15 +58,12 @@ function valeurs(entree, dimension, largeur) {
   if (dimension === "siecle") {
     return [nomDuSiecle(entree.debut.annee)];
   }
-  if (dimension === "fourchette") {
-    return [nomDeLaTranche(entree.debut.annee, largeur)];
-  }
   return [];
 }
 
 // Range les entrées en bandes. Renvoie aussi ce qui a été réuni sous
 // « autres », pour que l'écran puisse le dire.
-export function grouper(entrees, dimension, largeur) {
+export function grouper(entrees, dimension) {
   if (dimension === "aucun" || GROUPEMENTS[dimension] === undefined) {
     return { bandes: [{ nom: "", entrees }], regroupees: 0, indeterminees: 0 };
   }
@@ -79,7 +71,7 @@ export function grouper(entrees, dimension, largeur) {
   const parValeur = new Map();
   const indeterminees = [];
   for (const entree of entrees) {
-    const trouvees = valeurs(entree, dimension, largeur);
+    const trouvees = valeurs(entree, dimension);
     if (trouvees.length === 0) {
       indeterminees.push(entree);
       continue;
@@ -96,7 +88,7 @@ export function grouper(entrees, dimension, largeur) {
 
   // Les bandes chronologiques se lisent dans l'ordre du temps ; les autres,
   // de la plus fournie à la moins fournie.
-  const chronologique = dimension === "siecle" || dimension === "fourchette";
+  const chronologique = dimension === "siecle";
   const rangees = [...parValeur.entries()].sort((a, b) => {
     if (chronologique) {
       return a[1][0].debut.annee - b[1][0].debut.annee;
