@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/frise.css">
   <link rel="stylesheet" href="css/filtres.css">
+  <link rel="stylesheet" href="css/detail.css">
 </head>
 <body>
   <header>
@@ -22,6 +23,7 @@
     <div class="barre-outils">
       <p id="densite"></p>
       <div class="zoom">
+        <button type="button" id="ajouter-entree">+ Ajouter une entrée</button>
         <button type="button" id="zoom-moins" aria-label="Voir une période plus large">−</button>
         <button type="button" id="zoom-plus" aria-label="Voir de plus près">+</button>
       </div>
@@ -36,6 +38,15 @@
              aria-label="Frise chronologique"></svg>
       </div>
     </div>
+
+    <section id="detail" class="detail" hidden aria-label="Détail de l'entrée">
+      <div class="entete-detail">
+        <button type="button" id="retour-frise">← Retour à la frise</button>
+        <span id="compteur-modifications" class="compteur"></span>
+      </div>
+      <div id="barrage" class="barrage" hidden></div>
+      <div id="contenu-detail"></div>
+    </section>
 
     <p class="legende">
       Une barre plus pâle, au bord tireté, signale une date connue à l'année

@@ -61,6 +61,18 @@ socle et attend un clic.
 **Ce qui l'a remplacé :** un message d'accueil qui annonce ce que le socle
 contient — plus utile qu'une frise que personne n'a demandée.
 
+### Quatre copies de la fabrique d'éléments HTML
+*2026-09-19, lot d'édition*
+
+La même fonction `creer(balise, classe, texte)` existait dans `app.js`,
+`detail.js` et `vues.js`, plus une quatrième variante `creerHtml` dans
+`timeline.js`. Réunies dans `js/html.js`.
+
+**Pourquoi ça comptait :** c'est la fonction qui décide comment un texte entre
+dans la page — par `textContent`, jamais par `innerHTML`, puisque les noms
+viennent d'une source que n'importe qui peut modifier. Quatre copies d'une
+règle de sécurité finissent par diverger.
+
 ---
 
 ## Éteint, mais toujours là

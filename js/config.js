@@ -71,6 +71,14 @@ export const TRANCHE_ANS = 25;
 // y ramène peu de chose, et donc répond vite.
 export const MAX_TRANCHES = 8;
 
+// Version du format du fichier de contributions.
+//
+// Elle voyage dans chaque fichier produit. Sans elle, une personne resterait
+// sur une vieille version de l'éditeur et enverrait un jour un fichier que le
+// script de fusion ne saurait plus lire — sans que personne comprenne
+// pourquoi. Le contrat est décrit dans socle/contributions.md.
+export const VERSION_CONTRIBUTIONS = 1;
+
 // --- Saisie ---
 
 // Une année : jusqu'à six chiffres, signe moins accepté pour « avant J.-C. ».

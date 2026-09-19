@@ -17,7 +17,16 @@ traverse sa vie s'allume — les souverains qui régnaient, les philosophes qui
 - Filtrer par **pays**, ou se **centrer sur une personne** pour ne garder que
   ses contemporains.
 - **Regrouper** en bandes : par catégorie, par pays, par siècle.
-- Cliquer une barre pour voir tout ce qui recouvre sa période.
+- Cliquer une barre pour voir tout ce qui recouvre sa période, et **ouvrir sa
+  fiche** : chaque information y est modifiable, et l'on peut créer ou
+  supprimer une entrée.
+
+Les corrections ne partent nulle part : elles s'enregistrent dans un fichier
+sur votre machine, que vous envoyez si vous le voulez. Tant qu'une
+modification n'est pas enregistrée, le retour à la frise est barré — mieux
+vaut un geste de plus qu'une soirée de travail perdue. Le format du fichier
+est décrit dans `socle/contributions.md`, et `socle/fusionner.py` le relit en
+produisant un rapport, sans jamais rien modifier de lui-même.
 
 Rien ne se met à jour tant qu'on n'a pas cliqué sur **Charger** — y compris à
 l'ouverture : la page ne cherche rien tant que personne n'a rien demandé.

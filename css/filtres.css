@@ -124,6 +124,14 @@
   }
 }
 
+/* Sans cette première règle, la frise ne se masque pas quand le panneau de
+   détail s'ouvre : « display: flex » l'emporte sur l'attribut « hidden » du
+   navigateur, qui n'est qu'un « display: none » de faible priorité. Constaté
+   le 2026-09-19 — le panneau s'affichait, et la frise restait dessous. */
+.zone-frise[hidden] {
+  display: none;
+}
+
 .zone-frise {
   display: flex;
   align-items: flex-start;

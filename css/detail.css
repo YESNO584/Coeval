@@ -1,0 +1,154 @@
+/* Le panneau de détail, et le bandeau qui barre le retour à la frise. */
+
+.detail {
+  margin: 0.6rem 0;
+  padding: 0.9rem 1rem 1.1rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+}
+
+.detail[hidden] {
+  display: none;
+}
+
+.entete-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--trait);
+}
+
+.entete-detail button {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  background: var(--fond);
+  color: var(--texte);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.compteur {
+  color: var(--alerte);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.titre-detail {
+  margin: 0.8rem 0 0.1rem;
+  font-size: 1.15rem;
+}
+
+.nature-detail {
+  margin: 0 0 0.9rem;
+  color: var(--gris);
+  font-size: 0.82rem;
+}
+
+.formulaire-detail,
+.informations-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.informations-detail {
+  margin: 1rem 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--trait);
+}
+
+.ligne-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.7rem;
+  align-items: baseline;
+}
+
+.etiquette-detail {
+  flex: 0 0 8rem;
+  color: var(--gris);
+  font-size: 0.8rem;
+}
+
+.valeur-detail {
+  font-size: 0.9rem;
+}
+
+.ligne-detail input,
+.ligne-detail textarea {
+  flex: 1 1 16rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  background: var(--fond);
+  color: var(--texte);
+  font: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.ligne-detail input.invalide {
+  border-color: var(--alerte);
+  background: var(--alerte-fond);
+}
+
+.bouton-danger,
+.bouton-principal,
+.bouton-discret {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bouton-danger {
+  border: 1px solid var(--alerte);
+  background: var(--alerte-fond);
+  color: var(--alerte);
+}
+
+.bouton-principal {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--carte);
+  font-weight: 600;
+}
+
+.bouton-discret {
+  border: 1px solid var(--trait);
+  background: var(--fond);
+  color: var(--gris);
+}
+
+/* Le bandeau ne se contente pas de refuser le retour : il propose les deux
+   seules issues, et dit combien de travail est en jeu. */
+.barrage {
+  margin: 0.8rem 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--alerte);
+  border-radius: var(--rayon);
+  background: var(--alerte-fond);
+}
+
+.barrage[hidden] {
+  display: none;
+}
+
+.message-retour {
+  margin: 0 0 0.7rem;
+  color: var(--alerte);
+  font-size: 0.9rem;
+}
+
+.boutons-retour {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

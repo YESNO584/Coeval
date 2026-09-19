@@ -45,7 +45,9 @@ jobs:
           python-version: "3.12"
       - name: Tests
         working-directory: socle
-        run: python test_socle.py
+        run: |
+          python test_socle.py
+          python test_fusion.py
 
   publier:
     name: Fabriquer et publier

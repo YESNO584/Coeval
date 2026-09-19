@@ -661,6 +661,42 @@ regroupement occupait 152 pixels — 45 % de la largeur, contre 189 pour la
 frise elle-même. Elle se resserre maintenant à 89 pixels sous 600, et son
 compte passe sous le nom au lieu d'être à côté.
 
+### L8 — L'édition ✅ fait le 2026-09-19
+
+Un clic sur une barre ouvre le **panneau de détail**, qui remplace la frise
+plutôt que de flotter au-dessus : on ne revient qu'en ayant enregistré ou
+abandonné, et un panneau qu'on ferme d'un clic à côté ne le ferait pas
+respecter.
+
+Six champs modifiables — nom, début, fin, précision, pays, description. La
+notoriété et la source n'en sont pas : elles viennent de la source et n'ont
+pas de sens hors d'elle. Création et suppression incluses ; une entrée neuve
+reçoit un **identifiant provisoire** (`tmp-1`), qu'un contributeur ne peut pas
+inventer et que la fusion remplacera.
+
+**Le retour est barré** tant qu'une modification n'est pas enregistrée. Le
+bandeau ne se contente pas de refuser : il dit combien de travail est en jeu
+et propose les deux seules issues. Ce qu'il ne peut pas faire, et qui est
+écrit dans le code : aucune page web n'empêche de fermer un onglet.
+
+`socle/contributions.md` fige le format du fichier — le contrat entre la page
+et le script. `socle/fusionner.py` le lit et **ne modifie rien tout seul** :
+il produit un rapport, accepté / conflit / refusé, et la décision reste
+humaine.
+
+**Mesuré de bout en bout le 2026-09-19 :** clic → panneau ouvert, frise
+masquée, six champs ; modification → « 1 modification non enregistrée » ;
+retour → barré, bandeau affiché ; enregistrement → fichier au bon format, avec
+`avant: "John Wesley"` et `apres: "Nom corrigé"` ; retour à la frise, compteur
+remis à zéro. Le fichier produit, rejoué contre le socle publié par le script
+de fusion : **2 acceptées, 1 conflit détecté, 0 refusée**. Aucune erreur en
+console.
+
+**Un défaut trouvé par la mesure :** la frise ne se masquait pas. Sa règle
+`display: flex` l'emportait sur l'attribut `hidden`, qui n'est qu'un
+`display: none` de faible priorité. Le panneau s'affichait, et la frise
+restait dessous. Invisible à la lecture du code.
+
 ## 11. Ce qu'il faut préserver pour un portage Flutter
 
 - **`socle/requetes/` et `js/model.js` sont le cœur transférable.** Les requêtes

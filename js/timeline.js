@@ -10,6 +10,8 @@
 //   - un événement ponctuel est un losange, pas une barre d'un jour : une
 //     barre invisible ferait croire à une absence.
 
+import { creer } from "./html.js";
+
 const SVG = "http://www.w3.org/2000/svg";
 
 export const ZOOM_MIN = 0.6;
@@ -162,15 +164,6 @@ export function dessiner(svg, bandes, min, max, pixelsParAnnee, surSelection) {
   return { largeur, hauteur, bandes: mesures, barres };
 }
 
-function creerHtml(balise, classe, texte) {
-  const element = document.createElement(balise);
-  element.className = classe;
-  if (texte !== undefined) {
-    element.textContent = texte;
-  }
-  return element;
-}
-
 // La colonne de gauche. Ses bandes sont calées au pixel près sur celles de
 // la frise, dont le dessin renvoie la géométrie exacte.
 export function dessinerColonne(colonne, bandes) {
@@ -181,10 +174,10 @@ export function dessinerColonne(colonne, bandes) {
   }
   colonne.hidden = false;
   for (const bande of bandes) {
-    const bloc = creerHtml("div", "bande");
+    const bloc = creer("div", "bande");
     bloc.style.height = `${bande.hauteur}px`;
-    bloc.append(creerHtml("span", "nom-bande", bande.nom));
-    bloc.append(creerHtml("span", "compte-bande", String(bande.entrees)));
+    bloc.append(creer("span", "nom-bande", bande.nom));
+    bloc.append(creer("span", "compte-bande", String(bande.entrees)));
     colonne.append(bloc);
   }
 }

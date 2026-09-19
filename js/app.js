@@ -7,6 +7,9 @@ import { chargerTout } from "./chargement.js";
 import { trierParNotoriete, bornes, appliquerQuota } from "./model.js";
 import { grouper } from "./groupes.js";
 import * as socle from "./socle.js";
+import { creer } from "./html.js";
+import * as edition from "./edition.js";
+import { demarrer } from "./demarrage.js";
 import { decrireSiecle, accueillir, expliquerLeVide } from "./accueil.js";
 import {
   dessiner,
@@ -51,17 +54,6 @@ function annoncer(texte, enPanne) {
   zoneEtat.dataset.occupe = etat.occupe ? "oui" : "non";
 }
 
-function creer(balise, classe, texte) {
-  const element = document.createElement(balise);
-  if (classe !== undefined) {
-    element.className = classe;
-  }
-  if (texte !== undefined) {
-    element.textContent = texte;
-  }
-  return element;
-}
-
 function recouvre(a, b) {
   return a.debut.annee <= b.fin.annee && a.fin.annee >= b.debut.annee;
 }
@@ -87,6 +79,9 @@ function selectionner(id) {
   zoneChoix.append(lien);
   zoneChoix.append(creer("span", undefined,
     ` — ${quand} · ${contemporaines.length - 1} entrées contemporaines`));
+
+  // Le clic ouvre le détail. C'est là que tout se modifie.
+  edition.ouvrir(choisie);
 }
 
 function redessiner(bandes) {
@@ -239,4 +234,12 @@ filtres = installer(zoneFiltres, {
 // Au lancement, on ne cherche rien : on lit seulement l'index du socle — un
 // petit fichier — pour pouvoir dire ce qui est disponible. Chercher d'office
 // ferait travailler la page pour une question que personne n'a posée.
+demarrer({
+  svg,
+  zoneChoix,
+  etat,
+  annoncer,
+  mettreEnEvidence
+});
+
 accueillir(annoncer, zoneDensite);
