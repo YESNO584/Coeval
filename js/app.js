@@ -7,7 +7,14 @@ import { chargerTout } from "./chargement.js";
 import { trierParNotoriete, bornes, appliquerQuota } from "./model.js";
 import { grouper } from "./groupes.js";
 import * as socle from "./socle.js";
-import { dessiner, mettreEnEvidence, ZOOM_MIN, ZOOM_MAX } from "./timeline.js";
+import { decrireSiecle, accueillir, expliquerLeVide } from "./accueil.js";
+import {
+  dessiner,
+  dessinerColonne,
+  mettreEnEvidence,
+  ZOOM_MIN,
+  ZOOM_MAX
+} from "./timeline.js";
 
 const zoneEtat = document.querySelector("#etat");
 const zoneDensite = document.querySelector("#densite");
@@ -21,6 +28,7 @@ const etat = {
   chargees: [],
   ecartees: {},
   origines: { socle: 0, direct: 0 },
+  nonCouvertes: [],
   affichees: [],
   min: 0,
   max: 0,
@@ -58,24 +66,6 @@ function recouvre(a, b) {
   return a.debut.annee <= b.fin.annee && a.fin.annee >= b.debut.annee;
 }
 
-// La colonne de gauche. Ses bandes sont calées au pixel près sur celles de
-// la frise, dont le dessin renvoie la géométrie exacte.
-function dessinerColonne(bandes) {
-  colonne.replaceChildren();
-  if (bandes.length === 1 && bandes[0].nom === "") {
-    colonne.hidden = true;
-    return;
-  }
-  colonne.hidden = false;
-  for (const bande of bandes) {
-    const bloc = creer("div", "bande");
-    bloc.style.height = `${bande.hauteur}px`;
-    bloc.append(creer("span", "nom-bande", bande.nom));
-    bloc.append(creer("span", "compte-bande", String(bande.entrees)));
-    colonne.append(bloc);
-  }
-}
-
 function selectionner(id) {
   const choisie = etat.affichees.find((entree) => entree.id === id);
   if (choisie === undefined) {
@@ -103,7 +93,7 @@ function redessiner(bandes) {
   const mesures = dessiner(
     svg, bandes, etat.min, etat.max, etat.pixelsParAnnee, selectionner
   );
-  dessinerColonne(mesures.bandes);
+  dessinerColonne(colonne, mesures.bandes);
   if (etat.selection !== null) {
     selectionner(etat.selection);
   }
@@ -164,6 +154,9 @@ function affiner() {
   if (etat.origines.direct > 0) {
     details.push(`${etat.origines.direct} demandées à Wikidata à l'instant`);
   }
+  if (etat.nonCouvertes.length > 0) {
+    details.push(`${etat.nonCouvertes.join(", ")} absentes du socle`);
+  }
   zoneDensite.textContent = details.join(" · ");
 
   if (centre !== undefined && centre !== null) {
@@ -186,14 +179,21 @@ async function recharger() {
   filtres.verrouiller(true);
   annoncer("Préparation des requêtes…");
   try {
-    const { entrees, ecartees, origines } = await chargerTout(valeurs, annoncer);
+    const { entrees, ecartees, origines, nonCouvertes } =
+      await chargerTout(valeurs, annoncer);
     etat.chargees = entrees;
     etat.ecartees = ecartees;
     etat.origines = origines;
+    etat.nonCouvertes = nonCouvertes;
     etat.selection = null;
     zoneChoix.replaceChildren();
     if (entrees.length === 0) {
-      annoncer("Wikidata n'a rien renvoyé pour ces filtres.", true);
+      // Une frise vide sans explication ressemble à une panne. On dit
+      // précisément ce qui manque, et ce qui existe.
+      annoncer(expliquerLeVide(nonCouvertes), true);
+      svg.replaceChildren();
+      colonne.hidden = true;
+      zoneDensite.textContent = "";
       return;
     }
     const { min, max } = bornes(entrees);
@@ -236,4 +236,7 @@ filtres = installer(zoneFiltres, {
   groupement: VUE_INITIALE.groupement
 }, recharger);
 
-recharger();
+// Au lancement, on ne cherche rien : on lit seulement l'index du socle — un
+// petit fichier — pour pouvoir dire ce qui est disponible. Chercher d'office
+// ferait travailler la page pour une question que personne n'a posée.
+accueillir(annoncer, zoneDensite);

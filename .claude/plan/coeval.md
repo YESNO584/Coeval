@@ -379,13 +379,16 @@ le récent. Le penchant vers l'Occident n'est pas corrigé — il est **rendu
 visible** (§ 8). Corriger un biais mesuré est plus simple que corriger un biais
 supposé.
 
-### 6.3 Ce qui déclenche une requête en direct
+### 6.3 Le direct est désactivé — décision du 2026-09-19
 
-Trois cas, et trois seulement :
+**Le socle est la seule source.** La page n'interroge plus Wikidata.
 
-1. **une entité absente du socle** — une requête sur un identifiant, instantanée ;
-2. **« montre-moi tout le monde »** sur une période — au-delà des 60 ;
-3. **une catégorie non fabriquée** — médecins, explorateurs, batailles.
+Le code du direct est conservé, derrière le réglage `DIRECT_AUTORISE` de
+`js/config.js`, à `false`. Il a coûté cher à mettre au point et ses mesures
+restent inscrites au § 3 ; le remettre à `true` suffit à le rendre à la page.
+
+**Ce que ce choix impose :** une période absente du socle n'affiche rien. La
+page doit donc le dire, et le dire précisément — c'est le § 8 bis.
 
 ## 7. Tenir face aux limites
 
@@ -406,6 +409,26 @@ correct par un site vide sans que personne s'en aperçoive.
 GitHub Actions porte dans sa clé une empreinte des fichiers de requêtes.
 Modifier une requête refait le calcul complet tout seul, sans que personne ait
 à y penser.
+
+## 8 bis. Ne jamais laisser une frise vide sans explication
+
+Le socle se fabrique sur plusieurs nuits : la plupart des périodes n'y sont
+pas encore. **C'est une information, pas un incident**, et la page le traite
+comme tel.
+
+- **À l'ouverture**, elle ne cherche rien. Elle lit le seul index du socle et
+  annonce ce qui existe : « Socle du 19/09/2026 · 217 entrées · siècles
+  disponibles : 1700–1799 · 124 cases restent à fabriquer ».
+- **Quand une recherche ne trouve rien**, elle nomme d'abord ce qui manque,
+  puis ce qui existe : « Souverains, Philosophes, Événements : pas encore dans
+  le socle pour cette période. Siècles disponibles : 1700–1799. » L'ordre
+  compte — on répond à « pourquoi c'est vide » avant « que puis-je regarder ».
+- **Quand la couverture est partielle**, les catégories absentes sont
+  nommées dans l'encart de densité, à côté de ce qui s'affiche.
+
+**Mesuré dans Chromium le 2026-09-19 :** à l'ouverture, aucune frise et
+**zéro requête à Wikidata** ; sur une période hors socle, le message explicite
+et zéro requête ; sur une période couverte, 120 barres et zéro requête.
 
 ## 8. L'encart de densité
 

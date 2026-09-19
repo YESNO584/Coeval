@@ -86,6 +86,18 @@ export const ANNEE_MAX = 3000;
 // ont donné 227 personnes lors de la mesure du 2026-09-18.
 export const LIMITE_RESULTATS = 400;
 
+// Interroger Wikidata depuis la page, pour ce que le socle ne couvre pas.
+//
+// Désactivé : le socle est désormais la seule source. Le code du direct est
+// conservé — js/sparql.js, js/queries.js et la partie correspondante de
+// js/chargement.js — parce qu'il a coûté cher à mettre au point et que ses
+// mesures restent inscrites dans le plan. Le remettre à true suffit à le
+// rendre à la page.
+//
+// Ce que ce réglage change, concrètement : une période absente du socle
+// n'affiche plus rien, et la page le dit au lieu de se taire.
+export const DIRECT_AUTORISE = false;
+
 // Où la page va chercher le socle fabriqué chaque nuit. Un chemin relatif :
 // la page et son socle sont publiés côte à côte.
 export const CHEMIN_SOCLE = "data";

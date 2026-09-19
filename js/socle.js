@@ -45,6 +45,29 @@ export function informations() {
   return index;
 }
 
+// Ce que le socle contient, en clair. Sert à le dire au visiteur avant même
+// qu'il cherche : une frise vide sans explication ressemble à une panne.
+export function resume() {
+  if (index === null) {
+    return null;
+  }
+  const faits = [];
+  for (const [siecle, cases] of Object.entries(index.densite || {})) {
+    if (Object.values(cases).some((c) => c.aFaire !== true)) {
+      faits.push(Number.parseInt(siecle, 10));
+    }
+  }
+  faits.sort((a, b) => a - b);
+  return {
+    fabriqueLe: index.fabriqueLe,
+    total: index.total,
+    siecles: faits,
+    premier: faits.length > 0 ? faits[0] : null,
+    dernier: faits.length > 0 ? faits[faits.length - 1] + 99 : null,
+    casesAFaire: index.casesAFaire,
+  };
+}
+
 // Le socle couvre-t-il cette catégorie sur toute cette fenêtre ?
 //
 // Il faut que chaque siècle traversé ait été fabriqué pour cette catégorie.

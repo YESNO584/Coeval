@@ -19,20 +19,26 @@ traverse sa vie s'allume — les souverains qui régnaient, les philosophes qui
 - **Regrouper** en bandes : par catégorie, par pays, par siècle.
 - Cliquer une barre pour voir tout ce qui recouvre sa période.
 
-Rien ne se met à jour tant qu'on n'a pas cliqué sur **Charger** : on compose
-ses filtres tranquillement, et on ne paie qu'une fois.
+Rien ne se met à jour tant qu'on n'a pas cliqué sur **Charger** — y compris à
+l'ouverture : la page ne cherche rien tant que personne n'a rien demandé.
 
 ## D'où viennent les données
 
 De **[Wikidata](https://www.wikidata.org)**, sous licence CC0. Chaque nom
 affiché renvoie à sa fiche source, d'un clic.
 
-Elles arrivent par deux chemins, et l'application dit lequel :
+Elles arrivent par **le socle** : un extrait fabriqué chaque nuit par GitHub
+Actions et publié à côté de la page. L'affichage est donc immédiat, et la page
+n'interroge jamais Wikidata elle-même.
 
-- **le socle** — un extrait fabriqué chaque nuit par GitHub Actions et publié
-  à côté de la page. Immédiat ;
-- **le direct** — pour ce que le socle ne couvre pas encore, la page interroge
-  Wikidata depuis votre navigateur.
+**Le socle se construit sur plusieurs nuits**, parce que Wikidata limite le
+débit d'un client persévérant. Une période qui n'y est pas encore n'affiche
+rien — et la page le dit, en nommant les siècles déjà disponibles. Elle
+annonce d'ailleurs cet état dès l'ouverture, avant toute recherche.
+
+Le code capable d'interroger Wikidata depuis le navigateur existe toujours,
+désactivé par le réglage `DIRECT_AUTORISE` de `js/config.js`. Le remettre à
+`true` rend ce mode à la page.
 
 ## Ce que l'application vous dit, et que d'autres taisent
 

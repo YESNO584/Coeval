@@ -14,7 +14,8 @@ import {
   CATEGORIES,
   LIMITE_RESULTATS,
   TRANCHE_ANS,
-  MAX_TRANCHES
+  MAX_TRANCHES,
+  DIRECT_AUTORISE
 } from "./config.js";
 import {
   personnesVivantes,
@@ -140,6 +141,7 @@ export async function chargerTout(valeurs, annoncer) {
   const entrees = [];
   const ecartees = {};
   const origines = { socle: 0, direct: 0 };
+  const nonCouvertes = [];
 
   await socle.ouvrir();
 
@@ -151,6 +153,12 @@ export async function chargerTout(valeurs, annoncer) {
       origines.socle += lues.length;
       continue;
     }
+    if (!DIRECT_AUTORISE) {
+      // Le socle est la seule source. Ce qu'il ne couvre pas est signalé,
+      // jamais comblé en silence.
+      nonCouvertes.push(CATEGORIES[cle].nom);
+      continue;
+    }
     const resultat = await chargerCategorie(cle, valeurs.debut, valeurs.fin, annoncer);
     entrees.push(...resultat.entrees);
     origines.direct += resultat.entrees.length;
@@ -158,7 +166,7 @@ export async function chargerTout(valeurs, annoncer) {
   }
 
   if (entrees.length === 0) {
-    return { entrees, ecartees, origines };
+    return { entrees, ecartees, origines, nonCouvertes };
   }
 
   // Le socle porte déjà notoriété et pays : on ne redemande que pour ce qui
@@ -173,5 +181,5 @@ export async function chargerTout(valeurs, annoncer) {
     await attacherPays(aCompleter);
   }
 
-  return { entrees, ecartees, origines };
+  return { entrees, ecartees, origines, nonCouvertes };
 }

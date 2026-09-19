@@ -162,6 +162,33 @@ export function dessiner(svg, bandes, min, max, pixelsParAnnee, surSelection) {
   return { largeur, hauteur, bandes: mesures, barres };
 }
 
+function creerHtml(balise, classe, texte) {
+  const element = document.createElement(balise);
+  element.className = classe;
+  if (texte !== undefined) {
+    element.textContent = texte;
+  }
+  return element;
+}
+
+// La colonne de gauche. Ses bandes sont calées au pixel près sur celles de
+// la frise, dont le dessin renvoie la géométrie exacte.
+export function dessinerColonne(colonne, bandes) {
+  colonne.replaceChildren();
+  if (bandes.length === 1 && bandes[0].nom === "") {
+    colonne.hidden = true;
+    return;
+  }
+  colonne.hidden = false;
+  for (const bande of bandes) {
+    const bloc = creerHtml("div", "bande");
+    bloc.style.height = `${bande.hauteur}px`;
+    bloc.append(creerHtml("span", "nom-bande", bande.nom));
+    bloc.append(creerHtml("span", "compte-bande", String(bande.entrees)));
+    colonne.append(bloc);
+  }
+}
+
 export function mettreEnEvidence(svg, identifiants) {
   const choisis = new Set(identifiants);
   for (const groupe of svg.querySelectorAll(".entree")) {

@@ -23,6 +23,28 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-19 — Le socle devient la seule source
+
+- **Couper une source de repli rend visible tout ce qu'elle masquait.** Tant
+  que la page interrogeait Wikidata pour ce que le socle n'avait pas, on ne
+  voyait pas que le socle était presque vide. La qualité d'un repli se juge à
+  ce qu'il cache, pas à ce qu'il rattrape.
+- **Un écran vide doit nommer ce qui manque avant ce qui existe.** « Pas
+  encore dans le socle pour cette période » répond à la question que le
+  visiteur se pose ; la liste des siècles disponibles répond à la suivante.
+  L'inverse se lit comme une esquive.
+- **Ne rien charger à l'ouverture coûte une ligne et se remarque.** La page
+  travaillait pour une question que personne n'avait posée. Lire le seul index
+  suffit à dire ce qui est disponible — et c'est plus utile qu'une frise que
+  personne n'a demandée.
+- **Désactiver plutôt que supprimer, quand le code porte des mesures.** Le
+  mode direct a coûté plusieurs lots de mise au point ; il vit derrière un
+  réglage à `false`. Un `git revert` aurait aussi rendu le code, mais pas
+  l'intention — et personne ne relit l'historique pour retrouver une capacité
+  qu'il ignore avoir eue.
+
+---
+
 ## 2026-09-19 — Lots L6 et L7 de Coeval
 
 - **Une source facultative se teste dans ses trois états, pas dans un seul :**
