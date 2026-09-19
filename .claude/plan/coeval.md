@@ -210,6 +210,51 @@ ne la rendait pas moins chère : les mêmes cases échouaient toutes les nuits e
 consommaient tout le budget. Les échecs sont désormais notés dans le cache et
 laissés de côté ; `--reprendre-les-echecs` les retente quand on le demande.
 
+### 3.3 decies — Découper coûte, et ne rapporte rien sur les métiers
+
+Mesuré le 2026-09-19, après la fabrique du soir. Les artistes n'entraient
+toujours pas dans le socle : zéro entrée, neuf cases notées « trop lente ».
+Ce n'était plus les libellés. Les durées, prises directement sur le service,
+fenêtre −300 à −200 sauf mention :
+
+| Requête | Durée | Lignes |
+|---|---|---|
+| philosophes (1 métier) | 5,5 s | 138 |
+| artistes, les 5 métiers ensemble | 27,5 s puis 20,4 s | 202 |
+| artistes, les 5 métiers, 1500–1600 | 65,3 s | 400 (plafond) |
+| artistes, les 5 métiers, −275 à −270 | échec à 90 s | — |
+| peintre seul | 65,4 s puis 65,2 s | échec 504, deux fois |
+| compositeur seul | 68,5 s | 0 |
+| poète seul | 61,9 s | 89 |
+| écrivain seul | 64,2 s | 154 |
+| sculpteur seul | 41,8 s | échec 502 |
+
+Trois faits, et ils vont tous dans le même sens.
+
+**Un métier seul coûte plus cher que les cinq ensemble.** 65 s et un échec
+pour les peintres, 20 s et 202 personnes pour les cinq métiers réunis. Le
+`VALUES` à cinq entrées donne au planificateur de quoi passer par les dates ;
+avec une seule valeur il parcourt tous les peintres. La fabrique interroge
+métier par métier (`construire.py`, la boucle sur `categorie["metiers"]`) :
+elle paie cinq fois, et cinq fois plus cher.
+
+**Réduire la fenêtre ralentit.** Cinq ans mettent plus de 90 secondes là où
+cent ans en mettent 20. Le découpage n'est donc pas seulement inutile pour ces
+catégories, il est nuisible.
+
+**Le seuil de découpage de 30 s est sous le temps de réponse normal.** Une
+requête d'artistes répond entre 20 et 68 secondes selon la charge du service.
+Au-dessus de 30 s, `par_tranches` la déclare « trop large » et coupe — puis
+recoupe, jusqu'à des tranches de cinq ans, une trentaine d'essais par métier.
+Les cinq minutes de la case partent dans l'arbre de découpage sans qu'une
+seule requête aboutisse. Les philosophes répondent en 5,5 s, franchissent le
+seuil du premier coup : c'est toute la différence entre une catégorie qui
+entre dans le socle et une qui n'y entre jamais.
+
+Le découpage adaptatif reste juste pour les événements, où la densité varie
+vraiment avec la période. Il ne l'est pas pour une catégorie dont le coût
+tient au nombre de personnes portant le métier, pas à la fenêtre.
+
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
 ```sparql
