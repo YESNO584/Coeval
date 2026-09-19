@@ -426,9 +426,20 @@ Mode **GitHub Actions**, comme le dépôt AN-API du même compte. Les deux
 réglages manuels (*Actions → autoriser les workflows*, *Pages → Source :
 GitHub Actions*) ont été faits par l'utilisateur le 2026-09-18.
 
-`.github/workflows/pages.yml` publie la page à chaque poussée sur `main`, et
-**refuse de publier** si un fichier du site manque ou est vide. Le lot L5 y
-ajoutera la fabrique du socle.
+`.github/workflows/pages.yml` fait deux choses à deux rythmes différents :
+
+| Déclencheur | Ce qui se passe | Durée |
+|---|---|---|
+| Poussée sur `main` | Le socle déjà fabriqué est repris tel quel, sans interroger Wikidata | ~30 s |
+| Chaque nuit, ou sur demande | La fabrique complète ce qui manque, dans la limite de son budget | jusqu'à 2 h |
+
+**Pourquoi les séparer.** Enchaînés, ils faisaient payer à la publication le
+temps de la fabrique : deux heures d'attente pour corriger une virgule dans
+une feuille de style. Mesuré le 2026-09-19 sur la première exécution — tout
+sauf la fabrique tenait en dix-huit secondes.
+
+Le workflow **refuse de publier** si un fichier du site manque ou est vide, et
+publie la page même quand la fabrique n'a rien pu faire.
 
 Adresse : `https://yesno584.github.io/Coeval/`.
 

@@ -79,18 +79,33 @@ jobs:
           key: socle-${{ env.REGLES }}-${{ github.run_id }}
           restore-keys: socle-${{ env.REGLES }}-
 
-      # Volontairement facultatif. Le service public de Wikidata limite le
-      # débit d'un client qui l'interroge sans répit : une erreur 429 a été
-      # constatée le 2026-09-19 après une heure d'interrogations soutenues.
-      # La fabrique s'arrête alors proprement et reprendra la nuit suivante.
-      # Sans ce « continue-on-error », une nuit limitée empêcherait aussi la
-      # page de se publier — alors qu'elle sait très bien fonctionner en
-      # interrogeant Wikidata en direct.
-      - name: Compléter le socle
+      # Deux rythmes, et il ne faut pas les confondre.
+      #
+      # Publier la page doit être rapide : on corrige une virgule, on veut la
+      # voir. Fabriquer le socle est long. Enchaîner les deux faisait payer à
+      # la première le temps de la seconde — deux heures d'attente pour une
+      # modification de style. Sur un push, on se contente donc de reprendre
+      # le socle déjà fabriqué ; la fabrique elle-même ne tourne que la nuit
+      # ou sur demande.
+      #
+      # Volontairement facultatif dans les deux cas. Le service public de
+      # Wikidata limite le débit d'un client qui l'interroge sans répit :
+      # erreur 429 constatée le 2026-09-19 après une heure d'interrogations
+      # soutenues. La fabrique s'arrête alors proprement et reprend la nuit
+      # suivante. Sans ce « continue-on-error », une nuit limitée empêcherait
+      # aussi la page de se publier — alors qu'elle sait très bien
+      # fonctionner en interrogeant Wikidata en direct.
+      - name: Fabriquer ou reprendre le socle
         working-directory: socle
         continue-on-error: true
         timeout-minutes: 150
-        run: python -u construire.py --budget-minutes 120
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push : on reprend le socle déjà fabriqué, sans rien demander à Wikidata."
+            python -u construire.py --sans-reseau
+          else
+            python -u construire.py --budget-minutes 120
+          fi
 
       - name: Assembler le site
         run: |
