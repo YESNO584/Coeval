@@ -23,6 +23,29 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-19 — Lots L6 et L7 de Coeval
+
+- **Une source facultative se teste dans ses trois états, pas dans un seul :**
+  absente, partielle, complète. Le cas « partielle » est celui qu'on oublie,
+  et c'est celui que le site connaîtra le plus longtemps — un socle qui se
+  construit sur plusieurs nuits passe des semaines à moitié rempli.
+- **Basculer par catégorie plutôt que globalement.** Attendre qu'un socle soit
+  complet pour l'utiliser revient à ne jamais l'utiliser. En revanche, panacher
+  socle et direct *à l'intérieur d'une même catégorie* ferait varier la densité
+  de la frise pour une raison invisible : la bascule se décide par catégorie
+  entière, jamais par siècle.
+- **Un 404 attendu n'est pas une erreur, mais le navigateur le journalise
+  quand même.** Chercher un fichier facultatif laisse une ligne rouge dans la
+  console. Le critère « aucune erreur en console » doit donc distinguer
+  l'erreur de script de la trace réseau, sinon on se met à masquer des choses
+  utiles pour faire taire une ligne inoffensive.
+- **Mesurer la largeur des colonnes, pas seulement le débordement.** La page
+  ne débordait pas sur un téléphone — et pourtant la colonne de gauche prenait
+  45 % de l'écran. « Rien ne dépasse » ne veut pas dire « c'est utilisable » :
+  il faut comparer la place prise par le décor à celle laissée au contenu.
+
+---
+
 ## 2026-09-19 — Lot L5 de Coeval (la fabrique)
 
 - **Wikidata limite le débit au temps de calcul, pas au nombre d'appels.**

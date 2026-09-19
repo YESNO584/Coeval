@@ -6,6 +6,7 @@ import { installer } from "./filters.js";
 import { chargerTout } from "./chargement.js";
 import { trierParNotoriete, bornes, appliquerQuota } from "./model.js";
 import { grouper } from "./groupes.js";
+import * as socle from "./socle.js";
 import { dessiner, mettreEnEvidence, ZOOM_MIN, ZOOM_MAX } from "./timeline.js";
 
 const zoneEtat = document.querySelector("#etat");
@@ -19,6 +20,7 @@ const svg = document.querySelector("#frise");
 const etat = {
   chargees: [],
   ecartees: {},
+  origines: { socle: 0, direct: 0 },
   affichees: [],
   min: 0,
   max: 0,
@@ -152,6 +154,16 @@ function affiner() {
       details.push(`${etat.ecartees[cle]} ${mot}`);
     }
   }
+  // D'où viennent les données, et de quand elles datent. Une frise qui ne
+  // dit pas si elle montre un socle d'avant-hier ou une réponse de Wikidata
+  // à l'instant laisse croire à une fraîcheur qu'elle n'a pas.
+  const informations = socle.informations();
+  if (etat.origines.socle > 0 && informations !== null) {
+    details.push(`${etat.origines.socle} du socle du ${informations.fabriqueLe}`);
+  }
+  if (etat.origines.direct > 0) {
+    details.push(`${etat.origines.direct} demandées à Wikidata à l'instant`);
+  }
   zoneDensite.textContent = details.join(" · ");
 
   if (centre !== undefined && centre !== null) {
@@ -174,9 +186,10 @@ async function recharger() {
   filtres.verrouiller(true);
   annoncer("Préparation des requêtes…");
   try {
-    const { entrees, ecartees } = await chargerTout(valeurs, annoncer);
+    const { entrees, ecartees, origines } = await chargerTout(valeurs, annoncer);
     etat.chargees = entrees;
     etat.ecartees = ecartees;
+    etat.origines = origines;
     etat.selection = null;
     zoneChoix.replaceChildren();
     if (entrees.length === 0) {

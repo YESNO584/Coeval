@@ -189,3 +189,31 @@
   stroke: var(--carte);
   stroke-width: 1;
 }
+
+/* Sur un écran étroit, la colonne de regroupement mangeait 45 % de la
+   largeur — mesuré : 152 px sur 375, contre 189 px pour la frise elle-même.
+   Elle se resserre, et son compte passe sous le nom au lieu d'être à côté. */
+@media (max-width: 600px) {
+  .colonne {
+    flex: 0 0 5.5rem;
+  }
+
+  .bande {
+    display: block;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+  }
+
+  .compte-bande {
+    display: block;
+  }
+
+  .filtres {
+    gap: 0.5rem 0.9rem;
+    padding: 0.6rem;
+  }
+
+  .champ input[type="text"] {
+    width: 5rem;
+  }
+}

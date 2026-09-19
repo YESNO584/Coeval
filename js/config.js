@@ -86,6 +86,10 @@ export const ANNEE_MAX = 3000;
 // ont donné 227 personnes lors de la mesure du 2026-09-18.
 export const LIMITE_RESULTATS = 400;
 
+// Où la page va chercher le socle fabriqué chaque nuit. Un chemin relatif :
+// la page et son socle sont publiés côte à côte.
+export const CHEMIN_SOCLE = "data";
+
 // Le quota du plan (§ 6.1) : les 60 plus notoires par catégorie et par
 // siècle. Sans lui, 227 vies qui se chevauchent occupent 227 couloirs et la
 // frise fait cinq mille pixels de haut — mesuré, et illisible. Ce qui passe

@@ -28,6 +28,7 @@ import {
 import { interroger } from "./sparql.js";
 import { convertirPersonnes, ajouterNotoriete, ajouterPays } from "./model.js";
 import { convertirSouverains, convertirEvenements } from "./entrees.js";
+import * as socle from "./socle.js";
 
 const TAILLE_LOT = 300;
 
@@ -130,27 +131,47 @@ async function attacherPays(entrees) {
 
 // Charge tout ce que demandent les filtres. 'annoncer' sert à dire où on en
 // est : une attente de plusieurs secondes sans un mot ressemble à une panne.
+//
+// Chaque catégorie vient du socle quand il la couvre, du direct sinon. La
+// bascule se fait catégorie par catégorie : le socle se construit sur
+// plusieurs nuits, et il serait absurde d'attendre qu'il soit complet pour
+// profiter de ce qu'il contient déjà.
 export async function chargerTout(valeurs, annoncer) {
   const entrees = [];
   const ecartees = {};
+  const origines = { socle: 0, direct: 0 };
+
+  await socle.ouvrir();
 
   for (const cle of valeurs.categories) {
+    if (socle.couvre(cle, valeurs.debut, valeurs.fin)) {
+      annoncer(`${CATEGORIES[cle].nom} : lecture du socle…`);
+      const lues = await socle.lire([cle], valeurs.debut, valeurs.fin);
+      entrees.push(...lues);
+      origines.socle += lues.length;
+      continue;
+    }
     const resultat = await chargerCategorie(cle, valeurs.debut, valeurs.fin, annoncer);
     entrees.push(...resultat.entrees);
+    origines.direct += resultat.entrees.length;
     cumuler(ecartees, resultat.ecartees);
   }
 
   if (entrees.length === 0) {
-    return { entrees, ecartees };
+    return { entrees, ecartees, origines };
   }
 
-  annoncer(`${entrees.length} entrées trouvées. Mesure de leur notoriété…`);
-  const sujets = [...new Set(entrees.map((entree) => entree.idSujet))];
-  const lignesNotoriete = await parLots(sujets, notoriete, "notoriete");
-  ajouterNotoriete(entrees, lignesNotoriete, "idSujet");
+  // Le socle porte déjà notoriété et pays : on ne redemande que pour ce qui
+  // vient du direct.
+  const aCompleter = entrees.filter((entree) => entree.notoriete === null);
+  if (aCompleter.length > 0) {
+    annoncer(`${aCompleter.length} entrées à compléter. Mesure de leur notoriété…`);
+    const sujets = [...new Set(aCompleter.map((entree) => entree.idSujet))];
+    const lignesNotoriete = await parLots(sujets, notoriete, "notoriete");
+    ajouterNotoriete(aCompleter, lignesNotoriete, "idSujet");
+    annoncer("Recherche des pays…");
+    await attacherPays(aCompleter);
+  }
 
-  annoncer("Recherche des pays…");
-  await attacherPays(entrees);
-
-  return { entrees, ecartees };
+  return { entrees, ecartees, origines };
 }

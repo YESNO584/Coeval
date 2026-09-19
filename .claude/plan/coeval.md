@@ -578,17 +578,48 @@ le XVIIIe siècle a produit les cinq catégories et les fichiers attendus.
   d'écart, n'étaient donc pas départagées de la même façon des deux côtés.
   Trouvé par un test, pas à l'œil.
 
-### L6 — Socle et direct ensemble
-`socle.js`, et les trois cas de bascule vers le direct (§ 6.3). Encart de
-densité.
+### L6 — Socle et direct ensemble ✅ fait le 2026-09-19
 
-**Fini quand :** la page s'ouvre sans attendre sur le socle, et qu'une personne
-absente du socle s'affiche quand même après une requête en direct.
+`js/socle.js` lit l'index publié, puis les fichiers de siècle que traverse la
+fenêtre. **La bascule se fait catégorie par catégorie** : le socle se
+construit sur plusieurs nuits, il serait absurde d'attendre qu'il soit complet
+pour profiter de ce qu'il contient déjà.
 
-### L7 — Finition et mise en ligne
-Téléphone, mode sombre, `README.md` disant d'où viennent les données.
+La règle exacte : une catégorie vient du socle si **chaque siècle traversé** a
+été fabriqué pour elle. Un seul trou et tout est redemandé en direct —
+mélanger un siècle du socle et un siècle en direct donnerait une frise dont la
+densité varie pour une raison invisible au visiteur.
 
-**Fini quand :** l'adresse publique fonctionne depuis un autre appareil.
+Le socle portant déjà notoriété et pays, ils ne sont redemandés que pour ce
+qui vient du direct. Et l'écran dit d'où viennent les données : « 340 du socle
+du 19/09/2026 · 381 demandées à Wikidata à l'instant ». Une frise qui ne dit
+pas si elle montre un extrait d'avant-hier ou une réponse de l'instant laisse
+croire à une fraîcheur qu'elle n'a pas.
+
+**Mesuré dans Chromium**, sur trois états :
+- **socle partiel** — 340 entrées lues dans `index.json`, `1700.json` et
+  `1800.json`, 381 demandées en direct pour ce qu'il ne couvre pas, et
+  **4 requêtes au lieu de 10** ;
+- **socle absent** (le cas du site tant que la première nuit n'a pas fini) —
+  918 entrées, toutes en direct, aucune erreur JavaScript. Le navigateur note
+  le 404 sur `data/index.json` ; c'est la trace normale d'une recherche de
+  fichier facultatif, pas une panne ;
+- aucune erreur de script dans les deux cas.
+
+### L7 — Finition et mise en ligne ✅ fait le 2026-09-19
+
+`README.md` : ce que fait l'application, d'où viennent ses données, comment
+faire tourner la fabrique, et surtout ce qu'elle avoue — le biais de la mesure
+de notoriété, écrit noir sur blanc.
+
+**Mesuré dans un vrai navigateur**, trois tailles et deux thèmes : aucun
+débordement horizontal en 375, 768 ou 1280 pixels de large, et le mode sombre
+s'applique.
+
+**Un défaut corrigé au passage :** sur un écran de 375 pixels, la colonne de
+regroupement occupait 152 pixels — 45 % de la largeur, contre 189 pour la
+frise elle-même. Elle se resserre maintenant à 89 pixels sous 600, et son
+compte passe sous le nom au lieu d'être à côté.
 
 ## 11. Ce qu'il faut préserver pour un portage Flutter
 
