@@ -130,7 +130,8 @@ def fabriquer_case(cle, categorie, siecle, config, fonctions, quota):
     }
 
 
-def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire, hors_ligne):
+def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire,
+              hors_ligne, budget_case_s):
     """Complète le cache dans la limite du temps imparti, puis assemble.
 
     Le budget n'est pas un confort : le service limite le débit d'un client
@@ -152,7 +153,12 @@ def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire, hors_
                 arrete = True
                 continue
             try:
+                wikidata.accorder(budget_case_s)
                 case = fabriquer_case(cle, categorie, siecle, config, fonctions, quota)
+            except wikidata.TempsEcoule:
+                print(f"  ~ {siecle} {cle} : trop lente, reprise une autre nuit",
+                      file=sys.stderr)
+                continue
             except wikidata.DebitLimite as souci:
                 print(f"  ! débit limité ({souci}) : on s'arrête là, "
                       "la suite se fera à la prochaine exécution", file=sys.stderr)
@@ -161,6 +167,7 @@ def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire, hors_
             except wikidata.ServiceIndisponible as souci:
                 print(f"  ! {siecle} {cle} : {souci}", file=sys.stderr)
                 continue
+            wikidata.accorder(None)
             fichier.write_text(json.dumps(case, ensure_ascii=False), encoding="utf-8")
             print(f"  {siecle:>6} {cle:<14} {len(case['entrees']):>4} retenues "
                   f"sur {case['disponibles']:>5} disponibles", file=sys.stderr)
@@ -238,6 +245,8 @@ def main():
     analyse.add_argument("--quota", type=int, help="plafond par case")
     analyse.add_argument("--budget-minutes", type=int, default=0,
                          help="arrêter d'interroger après ce temps (0 = pas de limite)")
+    analyse.add_argument("--budget-case-minutes", type=float, default=3,
+                         help="temps accordé à une case avant de l'abandonner")
     analyse.add_argument("--refaire", action="store_true",
                          help="ignorer le cache et tout reprendre")
     analyse.add_argument("--sans-reseau", action="store_true",
@@ -256,7 +265,8 @@ def main():
 
     toutes, ecartees, densite, manquantes = fabriquer(
         config, perimetre, voulus, quota, options.budget_minutes * 60,
-        options.refaire, options.sans_reseau)
+        options.refaire, options.sans_reseau,
+        options.budget_case_minutes * 60)
     index = ecrire(toutes, ecartees, densite, config, quota, manquantes)
 
     print(f"\n{index['total']} entrées, {len(index['siecles'])} siècles, "

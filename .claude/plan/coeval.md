@@ -568,6 +568,23 @@ une limitation de débit l'arrête aussi — sans empêcher la page de se publie
 de publier un socle de 0 entrée (code de sortie 1) ; une exécution réelle sur
 le XVIIIe siècle a produit les cinq catégories et les fichiers attendus.
 
+**Première fabrique complète, mesurée le 2026-09-19 :** deux heures, et
+**8 cases sur 125** seulement — 269 entrées publiées, sur les siècles -500 à
+-200. Un quart d'heure par case, pour des siècles presque vides.
+
+La cause est structurelle : une case qui échoue est redécoupée jusqu'à vingt
+fenêtres de cinq ans, chacune réessayée trois fois. Un quart d'heure pour ne
+rien rapporter. **Une case dispose désormais de trois minutes** ; au-delà elle
+est abandonnée et reprise une autre nuit, le cache gardant tout le reste. À
+budget égal, cela porte la couverture d'une nuit de 8 cases à une quarantaine.
+
+**Ce qui reste à mesurer**, quand le service aura cessé de nous limiter :
+pourquoi une catégorie à cinq métiers coûte si cher sur un siècle presque
+vide. L'hypothèse est que le moteur part de l'ensemble des métiers — des
+centaines de milliers de personnes pour « écrivain » — au lieu de partir de
+l'intervalle de dates, étroit. Si elle se confirme, forcer l'ordre de lecture
+changerait tout. **Hypothèse, pas constat.**
+
 **Deux défauts trouvés en exécutant, et corrigés :**
 - le découpage des fenêtres réessayait trois fois avant de couper, soit
   quatre minutes perdues par fenêtre trop large. Une seule tentative suffit

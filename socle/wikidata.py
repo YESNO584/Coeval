@@ -36,10 +36,33 @@ PAUSE_ENTRE_REQUETES_S = 2.0
 ATTENTE_APRES_429_S = 120
 
 _derniere_requete = 0.0
+_echeance = None
 
 
 class ServiceIndisponible(RuntimeError):
     """Le service n'a pas répondu, ou a répondu une erreur."""
+
+
+class TempsEcoule(ServiceIndisponible):
+    """Le temps accordé à cette case est épuisé.
+
+    Une case qui s'acharne prend la place de dix autres. Mesuré le
+    2026-09-19 sur la première fabrique complète : huit cases seulement en
+    deux heures, parce qu'une case en échec se redécoupe en vingt fenêtres
+    de cinq ans, chacune réessayée. Mieux vaut l'abandonner et y revenir la
+    nuit suivante — le cache garde tout le reste.
+    """
+
+
+def accorder(secondes):
+    """Fixe le temps accordé à partir de maintenant. None lève la limite."""
+    global _echeance
+    _echeance = None if secondes is None else time.monotonic() + secondes
+
+
+def _verifier_le_temps():
+    if _echeance is not None and time.monotonic() > _echeance:
+        raise TempsEcoule("temps accordé à cette case épuisé")
 
 
 class DebitLimite(ServiceIndisponible):
@@ -60,6 +83,7 @@ def _patienter():
 
 
 def _envoyer(requete, delai=None):
+    _verifier_le_temps()
     _patienter()
     url = SERVICE + "?" + urllib.parse.urlencode({"query": requete})
     demande = urllib.request.Request(url, headers={
@@ -88,6 +112,8 @@ def interroger(requete, tentatives=TENTATIVES, delai=DELAI_MAX_S):
     for essai in range(tentatives):
         try:
             return _envoyer(requete, delai)
+        except TempsEcoule:
+            raise
         except DebitLimite as souci:
             # Le service demande d'attendre : on attend, et cette tentative
             # ne compte pas. Insister ferait durer la limitation.
@@ -120,9 +146,10 @@ def par_tranches(fabriquer, debut, fin, largeur_minimale=5):
         if dernier:
             return interroger(fabriquer(debut, fin))
         return interroger(fabriquer(debut, fin), 1, DELAI_DECOUPE_S)
-    except DebitLimite:
-        # Découper ne sert à rien quand c'est le débit qui est limité : on
-        # remonte l'erreur pour que l'appelant s'arrête proprement.
+    except (DebitLimite, TempsEcoule):
+        # Découper ne sert à rien quand c'est le débit qui est limité, ni
+        # quand le temps est épuisé : on remonte pour que l'appelant
+        # s'arrête proprement.
         raise
     except ServiceIndisponible:
         if dernier:

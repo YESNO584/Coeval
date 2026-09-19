@@ -12,6 +12,7 @@ import sys
 
 import modele
 import requetes
+import wikidata
 
 ICI = pathlib.Path(__file__).resolve().parent
 RACINE = ICI.parent
@@ -136,6 +137,46 @@ def test_annees_negatives_dans_les_requetes():
     requete = requetes.personnes_vivantes(["Q4964182"], -500, -400, 10)
     verifier('"-0500-01-01T00:00:00Z"' in requete,
              "une année avant J.-C. doit s'écrire avec quatre chiffres et un signe")
+
+
+def test_temps_accorde_a_une_case():
+    """Une case qui s'acharne prend la place de dix autres.
+
+    Le contrôle doit se faire AVANT l'appel réseau, sinon la limite ne
+    limite rien : elle attendrait la fin de la requête pour constater que le
+    temps est écoulé. Ce test ne touche donc à aucun réseau, par
+    construction — s'il en touchait un, c'est qu'il serait faux.
+    """
+    wikidata.accorder(-1)
+    try:
+        wikidata.interroger("SELECT ?x WHERE { ?x ?y ?z } LIMIT 1")
+        verifier(False, "le temps écoulé doit interrompre avant d'appeler le service")
+    except wikidata.TempsEcoule:
+        pass
+    except Exception as souci:
+        verifier(False, f"mauvaise erreur : {type(souci).__name__} — {souci}")
+    finally:
+        wikidata.accorder(None)
+
+
+def test_tranches_ne_decoupent_pas_une_limite_de_debit():
+    """Découper ne sert à rien quand c'est le client qui est limité."""
+    appels = []
+
+    def fabriquer(debut, fin):
+        appels.append((debut, fin))
+        raise wikidata.DebitLimite("30")
+
+    original = wikidata.interroger
+    wikidata.interroger = lambda requete, *reste: fabriquer(0, 0)
+    try:
+        wikidata.par_tranches(lambda a, b: "", 1700, 1800)
+        verifier(False, "une limitation de débit doit remonter, pas être découpée")
+    except wikidata.DebitLimite:
+        verifier(len(appels) == 1,
+                 f"une seule tentative attendue, {len(appels)} faites")
+    finally:
+        wikidata.interroger = original
 
 
 def main():
