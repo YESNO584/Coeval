@@ -1,63 +1,114 @@
-# Publie la page de Coeval sur GitHub Pages à chaque poussée sur main.
+# Fabrique le socle de Coeval et publie la page sur GitHub Pages.
 #
-# Deux réglages sont à faire une fois, à la main, dans le dépôt — une session
+# Deux réglages ont été faits une fois, à la main, dans le dépôt — une session
 # Claude Code n'y a pas accès :
 #   Settings → Actions → General : autoriser les workflows
 #   Settings → Pages → Source    : choisir « GitHub Actions »
 #
-# Adresse une fois publié : https://yesno584.github.io/Coeval/
-#
-# Ce workflow ne publie pour l'instant que des fichiers statiques. Le lot L5
-# y ajoutera la fabrique du socle, qui interrogera Wikidata et écrira les
-# fichiers JSON par siècle avant la publication.
+# Adresse publiée : https://yesno584.github.io/Coeval/
 
-name: Publier la page
+name: Fabriquer et publier
 
 on:
+  schedule:
+    # 04h10 UTC. L'heure importe peu : Wikidata n'a pas d'horaire de
+    # publication. La nuit évite simplement de croiser les heures de pointe
+    # de son service public.
+    - cron: "10 4 * * *"
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - "index.html"
       - "css/**"
       - "js/**"
+      - "socle/**"
       - ".github/workflows/pages.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Une seule publication à la fois ; une nouvelle n'annule pas celle en cours.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  verifier:
+    name: Vérifier la fabrique
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tests
+        working-directory: socle
+        run: python test_socle.py
+
   publier:
-    name: Assembler et publier
+    name: Fabriquer et publier
+    needs: verifier
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      # Seuls les fichiers du site partent en ligne. La configuration de
-      # travail (.claude) et les futurs scripts de fabrique restent dans le
-      # dépôt sans être publiés.
+      # Le socle se garde d'une nuit sur l'autre, et chaque exécution ne
+      # complète que ce qui manque.
+      #
+      # **L'empreinte des règles fait partie de la clé, et c'est
+      # indispensable.** Le cache ne contient que ce que les règles
+      # retenaient le jour où il a été rempli : modifier une requête ou le
+      # périmètre sans jeter le cache laisserait en ligne un socle d'hier,
+      # auquel les nouvelles règles ne s'appliqueraient plus. Avec
+      # l'empreinte, une modification refait la fabrique une fois, toute
+      # seule — personne n'a à y penser. Motif repris du dépôt AN-API.
+      - name: Retrouver le socle des nuits précédentes
+        uses: actions/cache@v4
+        env:
+          REGLES: ${{ hashFiles('socle/requetes.py', 'socle/modele.py', 'socle/perimetre.json', 'socle/config.json') }}
+        with:
+          path: socle/cache
+          key: socle-${{ env.REGLES }}-${{ github.run_id }}
+          restore-keys: socle-${{ env.REGLES }}-
+
+      # Volontairement facultatif. Le service public de Wikidata limite le
+      # débit d'un client qui l'interroge sans répit : une erreur 429 a été
+      # constatée le 2026-09-19 après une heure d'interrogations soutenues.
+      # La fabrique s'arrête alors proprement et reprendra la nuit suivante.
+      # Sans ce « continue-on-error », une nuit limitée empêcherait aussi la
+      # page de se publier — alors qu'elle sait très bien fonctionner en
+      # interrogeant Wikidata en direct.
+      - name: Compléter le socle
+        working-directory: socle
+        continue-on-error: true
+        timeout-minutes: 150
+        run: python -u construire.py --budget-minutes 120
+
       - name: Assembler le site
         run: |
           mkdir -p site
           cp index.html site/
           cp -r css js site/
+          if [ -d socle/public/data ]; then
+            cp -r socle/public/data site/data
+            echo "socle publié : $(ls site/data | wc -l) fichiers"
+          else
+            echo "::warning::pas de socle cette fois — la page interrogera Wikidata en direct"
+          fi
 
-      # Un site publié sans son code ne dirait rien de son échec : il
-      # s'afficherait, vide. Vérifier avant de publier, comme le fait le
-      # dépôt AN-API pour ses données.
+      # Un site publié sans son code s'afficherait vide, sans rien dire de
+      # son échec. Vérifier avant de publier, comme le fait AN-API.
       - name: Refuser de publier un site incomplet
         run: |
-          for fichier in site/index.html site/css/base.css site/css/frise.css site/js/app.js; do
+          for fichier in site/index.html site/css/base.css site/js/app.js; do
             if [ ! -s "$fichier" ]; then
               echo "::error::$fichier manque ou est vide — on ne publie pas."
               exit 1

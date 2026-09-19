@@ -23,6 +23,41 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-19 — Lot L5 de Coeval (la fabrique)
+
+- **Wikidata limite le débit au temps de calcul, pas au nombre d'appels.**
+  Après une heure d'interrogations soutenues : 429, et une requête triviale
+  qui passe de 0,8 s à 5 s. Une pause d'une seconde entre deux appels ne
+  protège pas d'une longue série. *Conséquence de conception :* tout travail
+  de fond sur un service public gratuit doit avoir un budget de temps, un
+  cache, et la capacité de reprendre — jamais « tout d'un coup ».
+- **Un 429 ne se découpe pas.** Le réflexe « la requête est trop grosse,
+  coupons-la » est faux ici : c'est le client qui est limité, pas la requête.
+  Les deux échecs demandent des réponses opposées — couper, ou attendre — et
+  les confondre fait perdre des heures.
+- **Réessayer avant de couper coûte plus cher que couper.** Une fenêtre trop
+  large échoue de façon reproductible : trois tentatives, c'est quatre minutes
+  d'attente pour apprendre ce qu'une seule tentative disait déjà. *Le motif :*
+  distinguer l'échec déterministe de l'échec passager, et ne réessayer que le
+  second.
+- **`| tail` masque la sortie d'un programme long.** Deux diagnostics ont été
+  faussés par là : le programme écrivait bien sa progression, mais `tail`
+  n'affiche rien avant la fin du tuyau. Pour suivre un travail long, écrire
+  dans un fichier et le lire, ou ne rien mettre après le tuyau.
+- **Un test a trouvé ce que l'œil ne voyait pas.** L'arbitrage de deux dates
+  concurrentes comparait les années côté Python et les dates complètes côté
+  page : deux valeurs du même mois n'étaient pas départagées pareil des deux
+  côtés. Le cas réel existe — Laplace a deux dates de mort à un jour d'écart.
+  *À retenir :* quand une même règle est écrite dans deux langages, le test
+  qui compare les deux vaut mieux qu'une relecture attentive.
+- **Un découpage temporel ne suffit pas toujours** : les cinq métiers de la
+  catégorie « artistes », groupés, dépassaient le budget du service même en
+  tranches de dix ans. Il a fallu découper aussi par métier. Quand une
+  dimension de découpage s'épuise, en chercher une autre plutôt que de
+  raffiner la première.
+
+---
+
 ## 2026-09-18 — Lot L4 bis de Coeval (formulaire)
 
 - **Ouvrir une borne de saisie oblige à revoir ce qui la consomme.** Accepter

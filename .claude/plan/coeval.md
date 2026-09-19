@@ -146,6 +146,39 @@ Basse-Navarre, et apparaît donc dans les deux bandes.
 n'en comptent qu'une ou deux.** Les bandes les plus fournies sont gardées, le
 reste va sous « autres ».
 
+### 3.3 sexies — Wikidata limite le débit d'un client persévérant
+
+Constaté le 2026-09-19, après environ une heure d'interrogations soutenues :
+**erreur 429, « Too Many Requests »**, et un ralentissement général — une
+requête triviale passant de 0,8 s à 5 s.
+
+Le budget de Wikidata se compte en **temps de calcul**, pas en nombre
+d'appels : une requête lourde consomme autant que dix légères. Une pause
+d'une seconde entre deux appels ne suffit pas sur une longue série.
+
+**Conséquence pour la fabrique**, et c'est la plus structurante de ce lot :
+elle ne peut pas tout faire d'un coup. Elle travaille avec un budget de
+temps, garde ce qu'elle a obtenu, et **se complète sur plusieurs nuits**.
+C'est exactement ce que fait le dépôt AN-API pour ses 2 295 documents, à
+raison de vingt par jour.
+
+### 3.3 septies — Le coût réel d'une case
+
+Mesuré le 2026-09-19, sur le XVIIIe siècle, avant limitation :
+
+| Catégorie | Temps | Entrées distinctes |
+|---|---:|---:|
+| Philosophes | 24,3 s | 196 |
+| Souverains | 29,3 s | 200 |
+| Événements | 21,9 s | 319 |
+
+Les siècles anciens sont bien plus rapides — ils contiennent peu de chose.
+Les siècles récents demandent un découpage, et les catégories à plusieurs
+métiers un découpage supplémentaire **par métier** : groupés, les cinq
+métiers de « artistes » dépassent le budget du service même en tranches de
+dix ans, « écrivain » comptant à lui seul des centaines de milliers de
+personnes.
+
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
 ```sparql
@@ -494,13 +527,45 @@ peu documentées qu'une tranche large y répond vite.
 apparaît pendant et disparaît après ; `12a` est refusé avec son motif, `-44`
 accepté, `1900 → 1800` refusé ; aucune erreur en console.
 
-### L5 — La fabrique
-`socle/construire.py`, `socle/requetes/`, `socle/perimetre.json`, le workflow,
-le refus de publier des données vides, l'empreinte des règles.
+### L5 — La fabrique ✅ fait le 2026-09-19
 
-**Fini quand :** une exécution complète produit `data/index.json` et au moins
-trois fichiers de siècle, et qu'une exécution avec une requête volontairement
-cassée **refuse de publier**.
+`socle/` : `construire.py` (orchestration), `wikidata.py` (accès au service),
+`requetes.py` (les requêtes), `modele.py` (conversion), `perimetre.json`
+(les fonctions souveraines, écrites à la main), `config.json`, `test_socle.py`.
+Le workflow fabrique chaque nuit et publie.
+
+**Cible : 10 000 entrées**, soit 80 par case (25 siècles × 5 catégories). Le
+quota est un **plafond, pas une cible** : une case pauvre reste pauvre, et son
+compte réel est publié dans `index.json`.
+
+**Le périmètre des souverains est écrit à la main** — 58 fonctions choisies
+une par une dans une liste vérifiée de 570, groupées par région. Les
+évêques-princes en sont exclus volontairement : leurs charges *sont* des
+souverainetés dans l'arbre de classes de Wikidata, ce qui est exact, mais
+ramenait des bandes « diocèse de Spire » parmi les plus fournies. Trois
+fonctions génériques (roi, monarque, empereur — 1 496 détenteurs) sont
+gardées en réserve, désactivées : elles ne portent aucun État et iraient
+toutes dans « indéterminé ».
+
+**La fabrique se complète sur plusieurs nuits.** Chaque case fabriquée est
+gardée dans un cache conservé par GitHub Actions, dont la clé porte une
+empreinte des fichiers de règles : modifier une requête ou le périmètre refait
+la fabrique une fois, toute seule. Un budget de temps l'arrête proprement, et
+une limitation de débit l'arrête aussi — sans empêcher la page de se publier.
+
+**Vérifié :** les tests passent sans toucher au réseau ; le garde-fou refuse
+de publier un socle de 0 entrée (code de sortie 1) ; une exécution réelle sur
+le XVIIIe siècle a produit les cinq catégories et les fichiers attendus.
+
+**Deux défauts trouvés en exécutant, et corrigés :**
+- le découpage des fenêtres réessayait trois fois avant de couper, soit
+  quatre minutes perdues par fenêtre trop large. Une seule tentative suffit
+  quand on peut encore couper : l'échec est alors une information, pas une
+  panne ;
+- l'arbitrage des dates concurrentes départageait par année côté Python et
+  par date complète côté page. Les deux dates de mort de Laplace, à un jour
+  d'écart, n'étaient donc pas départagées de la même façon des deux côtés.
+  Trouvé par un test, pas à l'œil.
 
 ### L6 — Socle et direct ensemble
 `socle.js`, et les trois cas de bascule vers le direct (§ 6.3). Encart de

@@ -1,0 +1,7 @@
+
+# Produits par la fabrique, jamais commités : le dépôt ne contient que du
+# code et des critères. Le socle se refabrique, il ne se conserve pas ici.
+socle/public/
+socle/cache/
+__pycache__/
+*.pyc

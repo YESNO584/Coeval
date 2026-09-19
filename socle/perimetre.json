@@ -1,0 +1,116 @@
+{
+  "_note": "Périmètre des fonctions souveraines, écrit à la main le 2026-09-19. Chaque identifiant a été relevé dans Wikidata, jamais deviné : la liste vient d'une requête sur les fonctions descendant de « monarque » (Q116), triées par nombre de détenteurs, dans laquelle les entrées ci-dessous ont été choisies une par une. Le nombre indiqué est celui relevé ce jour-là ; il bougera.",
+  "_pourquoi_une_liste_a_la_main": "La requête générique « tout ce qui descend de monarque » ramène 570 fonctions, dont des centaines d'évêchés : sur le XVIIIe siècle, les huit premiers résultats étaient des évêques-princes. Ce n'est pas une erreur de Wikidata — ces charges sont des souverainetés dans son arbre de classes — mais ce n'est pas ce qu'on veut montrer. Le périmètre est donc un choix assumé, discutable, et modifiable ici sans toucher au code.",
+  "_exclus_volontairement": {
+    "eveches": "Q22881 prince-évêque et toutes les fonctions « évêque de … » / « archevêque de … » : environ 300 fonctions, qui noyaient le reste.",
+    "papaute": "Q19546 pape — souveraineté réelle sur les États pontificaux, mais qui déséquilibre une frise politique.",
+    "consorts": "Q719039 reine consort et équivalents : n'exercent pas la fonction.",
+    "generiques": "Q12097 roi, Q116 monarque, Q39018 empereur — voir le groupe « generique » ci-dessous."
+  },
+  "groupes": [
+    {
+      "nom": "Europe occidentale",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q18384454", "nom": "roi de France", "detenteurs": 24 },
+        { "id": "Q3439798", "nom": "roi de France et de Navarre", "detenteurs": 6 },
+        { "id": "Q34797717", "nom": "reine de France", "detenteurs": 15 },
+        { "id": "Q18810062", "nom": "monarque d'Angleterre", "detenteurs": 47 },
+        { "id": "Q12716207", "nom": "roi d'Écosse", "detenteurs": 51 },
+        { "id": "Q111722535", "nom": "monarque du Royaume-Uni de Grande-Bretagne et d'Irlande", "detenteurs": 6 },
+        { "id": "Q9134365", "nom": "monarque du Royaume-Uni", "detenteurs": 5 },
+        { "id": "Q3847454", "nom": "roi ou reine d'Espagne", "detenteurs": 13 },
+        { "id": "Q58005590", "nom": "monarque de la couronne de Castille", "detenteurs": 20 },
+        { "id": "Q58631963", "nom": "monarque d'Aragon", "detenteurs": 20 },
+        { "id": "Q58800860", "nom": "monarque du Portugal", "detenteurs": 35 },
+        { "id": "Q3930923", "nom": "roi de Sicile", "detenteurs": 13 },
+        { "id": "Q21096118", "nom": "roi de Naples", "detenteurs": 10 },
+        { "id": "Q2045066", "nom": "roi des Pays-Bas", "detenteurs": 7 },
+        { "id": "Q13592862", "nom": "roi des Belges", "detenteurs": 7 },
+        { "id": "Q2457774", "nom": "prince de Monaco", "detenteurs": 41 }
+      ]
+    },
+    {
+      "nom": "Empire et Europe centrale",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q181765", "nom": "empereur romain germanique", "detenteurs": 40 },
+        { "id": "Q782985", "nom": "roi des Romains", "detenteurs": 27 },
+        { "id": "Q166877", "nom": "empereur d'Autriche", "detenteurs": 4 },
+        { "id": "Q3240735", "nom": "roi de Prusse", "detenteurs": 9 },
+        { "id": "Q45341328", "nom": "roi de Bohême", "detenteurs": 36 },
+        { "id": "Q6412254", "nom": "roi de Hongrie", "detenteurs": 53 },
+        { "id": "Q3273712", "nom": "roi de Pologne", "detenteurs": 49 }
+      ]
+    },
+    {
+      "nom": "Europe du Nord et de l'Est",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q1268572", "nom": "roi de Suède", "detenteurs": 83 },
+        { "id": "Q18341329", "nom": "roi de Danemark", "detenteurs": 68 },
+        { "id": "Q1294765", "nom": "monarchie norvégienne", "detenteurs": 65 },
+        { "id": "Q2618625", "nom": "empereur de toutes les Russies", "detenteurs": 15 },
+        { "id": "Q12370489", "nom": "tsar de Russie", "detenteurs": 12 },
+        { "id": "Q26943762", "nom": "prince de Kiev", "detenteurs": 44 },
+        { "id": "Q12298699", "nom": "roi de Bulgarie", "detenteurs": 39 },
+        { "id": "Q1788734", "nom": "roi de Roumanie", "detenteurs": 4 }
+      ]
+    },
+    {
+      "nom": "Antiquité méditerranéenne et Proche-Orient",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q842606", "nom": "empereur romain", "detenteurs": 106 },
+        { "id": "Q18577504", "nom": "empereur byzantin", "detenteurs": 140 },
+        { "id": "Q81299243", "nom": "impératrice byzantine", "detenteurs": 51 },
+        { "id": "Q37110", "nom": "pharaon", "detenteurs": 517 },
+        { "id": "Q622602", "nom": "roi de Macédoine", "detenteurs": 37 },
+        { "id": "Q107905", "nom": "roi de Sparte", "detenteurs": 46 },
+        { "id": "Q28089939", "nom": "roi séleucide", "detenteurs": 56 },
+        { "id": "Q28124026", "nom": "roi d'Assyrie", "detenteurs": 143 },
+        { "id": "Q28132899", "nom": "roi de Babylone", "detenteurs": 142 },
+        { "id": "Q28108903", "nom": "empereur sassanide", "detenteurs": 30 }
+      ]
+    },
+    {
+      "nom": "Asie",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q268218", "nom": "empereur de Chine", "detenteurs": 401 },
+        { "id": "Q38702033", "nom": "roi de Chine", "detenteurs": 93 },
+        { "id": "Q208233", "nom": "empereur du Japon", "detenteurs": 128 },
+        { "id": "Q595038", "nom": "impératrice du Japon", "detenteurs": 113 },
+        { "id": "Q22304810", "nom": "roi de Joseon", "detenteurs": 27 },
+        { "id": "Q15390704", "nom": "empereur moghol", "detenteurs": 20 },
+        { "id": "Q27330121", "nom": "roi de Thaïlande", "detenteurs": 62 },
+        { "id": "Q27334179", "nom": "roi de Birmanie", "detenteurs": 84 },
+        { "id": "Q42298242", "nom": "roi du Cambodge", "detenteurs": 116 },
+        { "id": "Q19700527", "nom": "roi du Népal", "detenteurs": 32 },
+        { "id": "Q181888", "nom": "khan", "detenteurs": 390 }
+      ]
+    },
+    {
+      "nom": "Afrique et Amériques",
+      "actif": true,
+      "fonctions": [
+        { "id": "Q10962705", "nom": "empereur d'Éthiopie", "detenteurs": 98 },
+        { "id": "Q14566713", "nom": "sultan du Maroc", "detenteurs": 42 },
+        { "id": "Q38037531", "nom": "roi de Koush", "detenteurs": 93 },
+        { "id": "Q926643", "nom": "Manikongo", "detenteurs": 60 },
+        { "id": "Q20819805", "nom": "Ooni d'Ife", "detenteurs": 49 },
+        { "id": "Q165948", "nom": "Sapa Inca", "detenteurs": 15 }
+      ]
+    },
+    {
+      "nom": "generique",
+      "actif": false,
+      "_pourquoi_inactif": "Ces fonctions sont employées quand aucune fonction précise n'existe. Elles apportent environ 1 500 souverains de plus, mais aucune ne porte d'État : tous atterriraient dans la bande « indéterminé » du regroupement par pays. Les activer est un choix : plus de monde, moins de sens géographique.",
+      "fonctions": [
+        { "id": "Q12097", "nom": "roi", "detenteurs": 790 },
+        { "id": "Q116", "nom": "monarque", "detenteurs": 520 },
+        { "id": "Q39018", "nom": "empereur", "detenteurs": 186 }
+      ]
+    }
+  ]
+}

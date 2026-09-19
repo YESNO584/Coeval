@@ -1,0 +1,31 @@
+{
+  "_note": "Réglages de la fabrique du socle. Modifiable sans toucher au code.",
+  "total_cible": 10000,
+  "siecle_min": -500,
+  "siecle_max": 2000,
+  "_quota": "Le quota par case (siècle × catégorie) se calcule : total_cible ÷ nombre de cases. C'est un PLAFOND, pas une cible : aucune case ne sera remplie de force. Il n'y a pas mille philosophes connus au VIe siècle avant notre ère, et la fabrique publie le compte réel de chaque case pour que le creux se voie.",
+  "limite_par_requete": 400,
+  "lot_attributs": 300,
+  "_coherence": "Les clés de « categories » doivent être identiques à celles de js/config.js. socle/test_socle.py le vérifie : une divergence ferait lire à la page un socle dont les catégories ne correspondent pas aux siennes.",
+  "categories": {
+    "souverains": { "nom": "Souverains", "source": "fonction" },
+    "philosophes": { "nom": "Philosophes", "source": "metier", "metiers": ["Q4964182"] },
+    "scientifiques": {
+      "nom": "Scientifiques",
+      "source": "metier",
+      "metiers": ["Q901", "Q170790", "Q593644", "Q11063", "Q864503"]
+    },
+    "artistes": {
+      "nom": "Artistes",
+      "source": "metier",
+      "metiers": ["Q1028181", "Q36834", "Q49757", "Q36180", "Q1281618"]
+    },
+    "evenements": {
+      "nom": "Événements",
+      "source": "evenement",
+      "classes": ["Q13418847", "Q198", "Q10931", "Q131569"]
+    }
+  },
+  "_garde_fou": "La fabrique refuse de publier si le socle contient moins que « minimum_publiable » entrées : une panne de Wikidata ne doit pas remplacer un site correct par un site vide.",
+  "minimum_publiable": 500
+}
