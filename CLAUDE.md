@@ -150,6 +150,27 @@ name, a narrower glob would silently exempt whatever gets created first.
 Replace it with the real glob (e.g. `src/**/*.ts`) in the same session that
 creates the source folder.
 
+## Ce qui est retiré s'écrit
+
+**Toute suppression s'inscrit dans `.claude/retraits.md`**, avec trois choses :
+ce qui est parti, pourquoi, et ce qu'il faudrait savoir avant de le remettre.
+
+La raison est simple : **l'historique Git dit toujours *quoi*, jamais
+*pourquoi*.** Un `git log` retrouve n'importe quelle ligne effacée ; il ne dit
+pas quel raisonnement l'a fait effacer, ni ce qu'on casserait en la
+ressuscitant. Sans ce registre, la même chose se supprime, se remet, et se
+resupprime.
+
+Cela couvre les fichiers effacés, mais aussi — et surtout — les retraits
+*à l'intérieur* d'un fichier : une règle enlevée, une fonction, une option
+d'interface, un comportement. Ce sont ceux-là qu'aucun `git log --diff-filter=D`
+ne montrera.
+
+**Préférer éteindre à supprimer** quand le code porte des mesures ou un
+travail de mise au point : un réglage à `false`, documenté, se retrouve ; du
+code effacé ne se retrouve que si l'on sait qu'il a existé. Le registre a une
+section pour cela.
+
 ## Check before you answer
 
 Understand the whole thing before saying anything. Assume nothing. Almost
