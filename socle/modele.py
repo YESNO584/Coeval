@@ -86,14 +86,20 @@ def _nom_valide(nom, ecartees):
     return True
 
 
-def convertir_personnes(lignes, categorie):
+def convertir_personnes(lignes, categorie, noms=None):
+    """'noms' porte les libellés, demandés par une requête à part.
+
+    Les garder dans la requête principale la faisait échouer sur les
+    catégories à gros effectifs — voir requetes.libelles.
+    """
+    noms = noms or {}
     retenues, ecartees = {}, {"sansDate": 0, "sansNom": 0, "doublons": 0}
     for ligne in lignes:
         url = valeur(ligne, "p")
         if url is None:
             ecartees["sansDate"] += 1
             continue
-        nom = valeur(ligne, "pLabel") or ""
+        nom = valeur(ligne, "pLabel") or noms.get(identifiant(url), "")
         if not _nom_valide(nom, ecartees):
             continue
         debut = date(valeur(ligne, "naissance"), valeur(ligne, "precNaissance"))
@@ -111,15 +117,16 @@ def convertir_personnes(lignes, categorie):
     return list(retenues.values()), ecartees
 
 
-def convertir_souverains(lignes):
+def convertir_souverains(lignes, noms=None):
     """Un règne est une entrée : deux trônes occupés donnent deux barres."""
+    noms = noms or {}
     retenues, ecartees = {}, {"sansDate": 0, "sansNom": 0, "doublons": 0}
     for ligne in lignes:
         url, url_fonction = valeur(ligne, "p"), valeur(ligne, "fonction")
         if url is None or url_fonction is None:
             ecartees["sansDate"] += 1
             continue
-        nom = valeur(ligne, "pLabel") or ""
+        nom = valeur(ligne, "pLabel") or noms.get(identifiant(url), "")
         if not _nom_valide(nom, ecartees):
             continue
         debut = date(valeur(ligne, "debut"), valeur(ligne, "precDebut"))
@@ -142,7 +149,8 @@ def convertir_souverains(lignes):
     return list(retenues.values()), ecartees
 
 
-def convertir_evenements(lignes):
+def convertir_evenements(lignes, noms=None):
+    noms = noms or {}
     retenues = {}
     ecartees = {"sansDate": 0, "sansNom": 0, "doublons": 0, "sansFin": 0}
     for ligne in lignes:
@@ -150,7 +158,7 @@ def convertir_evenements(lignes):
         if url is None:
             ecartees["sansDate"] += 1
             continue
-        nom = valeur(ligne, "eLabel") or ""
+        nom = valeur(ligne, "eLabel") or noms.get(identifiant(url), "")
         if not _nom_valide(nom, ecartees):
             continue
         instant = valeur(ligne, "instant")
@@ -169,7 +177,8 @@ def convertir_evenements(lignes):
             continue
         retenues[cle] = _nouvelle(
             cle, cle, "evenement", nom, debut, fin, "evenements",
-            valeur(ligne, "classeLabel") or "", ponctuel or debut["annee"] == fin["annee"])
+            valeur(ligne, "classeLabel")
+            or noms.get(identifiant(valeur(ligne, "classe") or ""), ""), ponctuel or debut["annee"] == fin["annee"])
     return list(retenues.values()), ecartees
 
 

@@ -41,6 +41,33 @@ def siecles(config):
     return list(range(config["siecle_min"], config["siecle_max"], 100))
 
 
+def recuperer_noms(lignes, champs, config):
+    """Demande les libellés des identifiants rencontrés, à part.
+
+    Les garder dans la requête principale la faisait échouer sur les
+    catégories à gros effectifs. Quatrième application du même motif : une
+    requête large pour les identifiants, des requêtes bornées pour les
+    attributs.
+    """
+    identifiants = set()
+    for ligne in lignes:
+        for champ in champs:
+            url = modele.valeur(ligne, champ)
+            if url is not None:
+                identifiants.add(modele.identifiant(url))
+    if not identifiants:
+        return {}
+    reponses = wikidata.par_lots(
+        requetes.libelles, sorted(identifiants), config["lot_attributs"])
+    noms = {}
+    for reponse in reponses:
+        url = modele.valeur(reponse, "sujet")
+        nom = modele.valeur(reponse, "sujetLabel")
+        if url is not None and nom is not None:
+            noms[modele.identifiant(url)] = nom
+    return noms
+
+
 def recuperer_case(cle, categorie, debut, fin, config, fonctions):
     """Une case = une catégorie sur un siècle. Renvoie les entrées et ce qui
     a été écarté, en coupant la fenêtre en deux tant que le service refuse."""
@@ -58,16 +85,19 @@ def recuperer_case(cle, categorie, debut, fin, config, fonctions):
             lignes.extend(wikidata.par_tranches(
                 lambda a, b, m=metier: requetes.personnes_vivantes([m], a, b, limite),
                 debut, fin))
-        return modele.convertir_personnes(lignes, cle)
+        noms = recuperer_noms(lignes, ("p",), config)
+        return modele.convertir_personnes(lignes, cle, noms)
     if source == "fonction":
         lignes = wikidata.par_tranches(
             lambda a, b: requetes.souverains_regnants(fonctions, a, b, limite),
             debut, fin)
-        return modele.convertir_souverains(lignes)
+        noms = recuperer_noms(lignes, ("p", "fonction"), config)
+        return modele.convertir_souverains(lignes, noms)
     lignes = wikidata.par_tranches(
         lambda a, b: requetes.evenements(categorie["classes"], a, b, limite),
         debut, fin)
-    return modele.convertir_evenements(lignes)
+    noms = recuperer_noms(lignes, ("e", "classe"), config)
+    return modele.convertir_evenements(lignes, noms)
 
 
 def classer(entrees, quota):
@@ -131,7 +161,7 @@ def fabriquer_case(cle, categorie, siecle, config, fonctions, quota):
 
 
 def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire,
-              hors_ligne, budget_case_s):
+              hors_ligne, budget_case_s, reprendre_les_echecs):
     """Complète le cache dans la limite du temps imparti, puis assemble.
 
     Le budget n'est pas un confort : le service limite le débit d'un client
@@ -148,7 +178,11 @@ def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire,
         for cle, categorie in config["categories"].items():
             fichier = chemin_cache(siecle, cle)
             if fichier.exists() and not refaire:
-                continue
+                if not reprendre_les_echecs:
+                    continue
+                connue = json.loads(fichier.read_text(encoding="utf-8"))
+                if connue.get("echec") is None:
+                    continue
             if hors_ligne or arrete or (budget_s and time.monotonic() - depart > budget_s):
                 arrete = True
                 continue
@@ -156,7 +190,16 @@ def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire,
                 wikidata.accorder(budget_case_s)
                 case = fabriquer_case(cle, categorie, siecle, config, fonctions, quota)
             except wikidata.TempsEcoule:
-                print(f"  ~ {siecle} {cle} : trop lente, reprise une autre nuit",
+                # On note l'échec. Sans cette mémoire, chaque nuit rebrûlait
+                # son budget sur les mêmes cases trop lentes : mesuré le
+                # 2026-09-19, une quarantaine de tentatives dont trois quarts
+                # d'échecs, pour dix cases gagnées en deux heures.
+                fichier.write_text(json.dumps({
+                    "faitLe": datetime.date.today().isoformat(),
+                    "echec": "trop lente", "quota": quota, "disponibles": 0,
+                    "horsQuota": 0, "ecartees": {}, "entrees": [],
+                }, ensure_ascii=False), encoding="utf-8")
+                print(f"  ~ {siecle} {cle} : trop lente, notée et laissée de côté",
                       file=sys.stderr)
                 continue
             except wikidata.DebitLimite as souci:
@@ -183,6 +226,11 @@ def fabriquer(config, perimetre, siecles_voulus, quota, budget_s, refaire,
                 manquantes += 1
                 continue
             case = json.loads(fichier.read_text(encoding="utf-8"))
+            if case.get("echec") is not None:
+                densite[siecle][cle] = {"retenues": 0, "aFaire": True,
+                                        "echec": case["echec"]}
+                manquantes += 1
+                continue
             toutes.extend(case["entrees"])
             cumuler(ecartees, case["ecartees"])
             densite[siecle][cle] = {
@@ -245,10 +293,12 @@ def main():
     analyse.add_argument("--quota", type=int, help="plafond par case")
     analyse.add_argument("--budget-minutes", type=int, default=0,
                          help="arrêter d'interroger après ce temps (0 = pas de limite)")
-    analyse.add_argument("--budget-case-minutes", type=float, default=3,
+    analyse.add_argument("--budget-case-minutes", type=float, default=5,
                          help="temps accordé à une case avant de l'abandonner")
     analyse.add_argument("--refaire", action="store_true",
                          help="ignorer le cache et tout reprendre")
+    analyse.add_argument("--reprendre-les-echecs", action="store_true",
+                         help="retenter les cases notées trop lentes")
     analyse.add_argument("--sans-reseau", action="store_true",
                          help="n'assembler que ce qui est déjà dans le cache")
     options = analyse.parse_args()
@@ -266,7 +316,7 @@ def main():
     toutes, ecartees, densite, manquantes = fabriquer(
         config, perimetre, voulus, quota, options.budget_minutes * 60,
         options.refaire, options.sans_reseau,
-        options.budget_case_minutes * 60)
+        options.budget_case_minutes * 60, options.reprendre_les_echecs)
     index = ecrire(toutes, ecartees, densite, config, quota, manquantes)
 
     print(f"\n{index['total']} entrées, {len(index['siecles'])} siècles, "

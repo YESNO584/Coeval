@@ -73,6 +73,25 @@ dans la page — par `textContent`, jamais par `innerHTML`, puisque les noms
 viennent d'une source que n'importe qui peut modifier. Quatre copies d'une
 règle de sécurité finissent par diverger.
 
+### Le service de libellés dans les trois requêtes principales
+*2026-09-19 · `socle/requetes.py`*
+
+`SERVICE wikibase:label` retiré de `personnes_vivantes`, `souverains_regnants`
+et `evenements`. Les noms viennent maintenant de `libelles()`, sur une liste
+fermée d'identifiants.
+
+**Pourquoi :** il faisait échouer les requêtes des catégories à gros
+effectifs. Zéro artiste et un seul siècle de philosophes après deux heures de
+fabrique. Sans lui, la même case rend 340 entrées nommées.
+
+**Avant de le remettre :** il faudrait expliquer comment « philosophes sur un
+siècle dense » tiendrait dans le budget du service, ce qu'aucune mesure ne
+permet aujourd'hui.
+
+**Reste en place**, volontairement, dans `js/queries.js` : ce code est éteint
+(voir plus bas) et ses requêtes n'ont jamais dépassé une fenêtre de vingt-cinq
+ans, où le service de libellés tenait.
+
 ---
 
 ## Éteint, mais toujours là

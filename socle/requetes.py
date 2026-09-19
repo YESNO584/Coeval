@@ -28,7 +28,7 @@ def _date(annee):
 
 def personnes_vivantes(metiers, debut, fin, limite):
     return f"""{PREFIXE}
-SELECT DISTINCT ?p ?pLabel ?naissance ?precNaissance ?mort ?precMort WHERE {{
+SELECT DISTINCT ?p ?naissance ?precNaissance ?mort ?precMort WHERE {{
   VALUES ?metier {{ {_liste(metiers)} }}
   ?p wdt:P106 ?metier .
   ?p p:P569/psv:P569 [ wikibase:timeValue ?naissance ;
@@ -38,7 +38,6 @@ SELECT DISTINCT ?p ?pLabel ?naissance ?precNaissance ?mort ?precMort WHERE {{
                        wikibase:timePrecision ?precMort ] .
   FILTER(?naissance <= {_date(fin)})
   FILTER(?mort >= {_date(debut)})
-  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en" }}
 }}
 LIMIT {limite}"""
 
@@ -51,7 +50,7 @@ def souverains_regnants(fonctions, debut, fin, limite):
     de classes de Wikidata, ce qui est exact mais pas ce qu'on veut montrer.
     """
     return f"""{PREFIXE}
-SELECT DISTINCT ?p ?pLabel ?fonction ?fonctionLabel ?debut ?precDebut ?fin ?precFin
+SELECT DISTINCT ?p ?fonction ?debut ?precDebut ?fin ?precFin
 WHERE {{
   VALUES ?fonction {{ {_liste(fonctions)} }}
   ?p p:P39 ?st .
@@ -61,14 +60,13 @@ WHERE {{
   OPTIONAL {{ ?st pqv:P582 [ wikibase:timeValue ?fin ; wikibase:timePrecision ?precFin ] }}
   FILTER(?debut <= {_date(fin)})
   FILTER(COALESCE(?fin, ?debut) >= {_date(debut)})
-  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en" }}
 }}
 LIMIT {limite}"""
 
 
 def evenements(classes, debut, fin, limite):
     return f"""{PREFIXE}
-SELECT DISTINCT ?e ?eLabel ?classeLabel ?instant ?debut ?fin WHERE {{
+SELECT DISTINCT ?e ?classe ?instant ?debut ?fin WHERE {{
   VALUES ?classe {{ {_liste(classes)} }}
   ?e wdt:P31 ?classe .
   {{
@@ -83,9 +81,28 @@ SELECT DISTINCT ?e ?eLabel ?classeLabel ?instant ?debut ?fin WHERE {{
     FILTER(?debut <= {_date(fin)})
     FILTER(COALESCE(?fin, ?debut) >= {_date(debut)})
   }}
-  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en" }}
 }}
 LIMIT {limite}"""
+
+
+def libelles(identifiants):
+    """Les noms d'un lot d'identifiants, demandés à part.
+
+    Le service de libellés dans la requête principale la faisait échouer sur
+    les catégories à gros effectifs : « philosophes » sur un siècle dense
+    dépassait le budget du service, quand la même requête sans libellés passe.
+    Mesuré le 2026-09-19 — sous limitation de débit, donc les durées absolues
+    ne valent pas comparaison avec les mesures d'hier ; ce qui compte est
+    qu'une requête qui échouait réussit.
+
+    C'est la quatrième fois que le même motif gagne : une requête large pour
+    les identifiants, des requêtes bornées pour les attributs. La notoriété,
+    les pays, et maintenant les noms.
+    """
+    return f"""SELECT ?sujet ?sujetLabel WHERE {{
+  VALUES ?sujet {{ {_liste(identifiants)} }}
+  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en" }}
+}}"""
 
 
 def notoriete(identifiants):

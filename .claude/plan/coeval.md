@@ -179,6 +179,37 @@ métiers de « artistes » dépassent le budget du service même en tranches de
 dix ans, « écrivain » comptant à lui seul des centaines de milliers de
 personnes.
 
+### 3.3 octies — Le service de libellés faisait échouer les grosses requêtes
+
+**C'est la quatrième fois que le même motif gagne**, et celle-ci était sous
+le nez depuis le début : une requête large pour les identifiants, des
+requêtes bornées pour les attributs. La notoriété, les pays, et maintenant
+**les noms**.
+
+Constaté le 2026-09-19 en cherchant pourquoi les catégories fondées sur le
+métier n'entraient jamais dans le socle : sur 18 cases fabriquées, zéro
+artiste, un seul siècle de philosophes. Une quarantaine de tentatives en deux
+heures, dont trois quarts d'échecs.
+
+| Requête | Résultat |
+|---|---|
+| Philosophes, XVIIIe, **avec** `SERVICE wikibase:label` | échec — dépassement, puis transfert coupé |
+| La même **sans** le service de libellés | **23 s**, 400 lignes |
+| La case entière, libellés demandés à part | **80 s, 340 entrées, toutes nommées** |
+
+**Réserve honnête :** ces trois mesures ont été prises pendant que Wikidata
+limitait notre débit — une requête triviale mettait 7 s au lieu de 0,8. Les
+durées absolues ne se comparent donc pas à celles des sections précédentes.
+Ce qui compte, et qui ne dépend pas de la limitation : **une requête qui
+échouait réussit**.
+
+### 3.3 nonies — Une case en échec ne doit pas se rejouer chaque nuit
+
+Le plafond de trois minutes par case empêchait une case de tout bloquer, mais
+ne la rendait pas moins chère : les mêmes cases échouaient toutes les nuits et
+consommaient tout le budget. Les échecs sont désormais notés dans le cache et
+laissés de côté ; `--reprendre-les-echecs` les retente quand on le demande.
+
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
 ```sparql

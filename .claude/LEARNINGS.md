@@ -23,6 +23,35 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-09-19 — Les libellés coûtaient le succès des requêtes
+
+- **Un motif qui gagne trois fois mérite d'être appliqué partout, tout de
+  suite.** « Une requête large pour les identifiants, des requêtes bornées
+  pour les attributs » avait gagné sur la notoriété, puis sur les pays. Les
+  libellés étaient le troisième attribut, et personne n'y a pensé pendant
+  trois lots — parce qu'ils avaient toujours été là. *Réflexe :* quand une
+  règle se vérifie deux fois, chercher tout de suite où elle s'applique
+  encore.
+- **Un plafond ne rend pas une tâche moins chère.** Limiter une case à trois
+  minutes empêchait une case de tout bloquer, mais les mêmes cases échouaient
+  chaque nuit et brûlaient tout le budget. Un plafond doit s'accompagner d'une
+  mémoire de ce qui a échoué, sinon il organise le gaspillage au lieu de
+  l'éviter.
+- **Une observation d'utilisateur vaut un diagnostic.** « La base n'a que des
+  événements » était faux à la lettre — 201 souverains — mais pointait
+  exactement le bon endroit : les catégories fondées sur le métier étaient
+  affamées. *Ne pas corriger l'énoncé et s'arrêter là : chercher ce qu'il a vu.*
+- **Une mesure prise sous limitation de débit ne se compare pas à une mesure
+  prise sans.** Les durées absolues sont inutilisables. Reste valable le fait
+  qualitatif : ce qui échouait réussit. Le dire ainsi, plutôt que de publier
+  des secondes trompeuses.
+- **Une réponse de 65 536 octets exactement n'est pas une réponse.** C'est un
+  transfert coupé à 64 Ko. Le code HTTP était 200 et le JSON illisible ;
+  conclure « la requête a échoué » aurait été faux — elle avait réussi côté
+  serveur.
+
+---
+
 ## 2026-09-19 — Le socle devient la seule source
 
 - **Couper une source de repli rend visible tout ce qu'elle masquait.** Tant
