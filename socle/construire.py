@@ -324,18 +324,25 @@ def main():
         config, perimetre, voulus, quota, options.budget_minutes * 60,
         options.refaire, options.sans_reseau,
         options.budget_case_minutes * 60, options.reprendre_les_echecs)
+    # Le contrôle vient AVANT l'écriture, et c'est là tout ce qui compte :
+    # « ecrire » commence par effacer le socle précédent. Placé après, comme
+    # il l'était jusqu'au 2026-09-20, il refusait de publier un socle vide
+    # après avoir effacé celui qui marchait. L'atelier ignore ce code de
+    # retour — volontairement, pour qu'une nuit ratée n'empêche pas de
+    # publier une correction de style — et publiait donc le vide. Le site a
+    # perdu ses 1 155 entrées sur un commit qui ne touchait qu'à des
+    # commentaires.
+    minimum = config["minimum_publiable"]
+    if not options.siecles and len(toutes) < minimum:
+        print(f"ERREUR : {len(toutes)} entrées seulement, minimum {minimum}. "
+              "Rien n'est écrit ; le socle précédent reste intact.",
+              file=sys.stderr)
+        return 1
+
     index = ecrire(toutes, ecartees, densite, config, quota, manquantes)
 
     print(f"\n{index['total']} entrées, {len(index['siecles'])} siècles, "
           f"{manquantes} cases encore à faire, écartées : {ecartees}", file=sys.stderr)
-
-    # Une panne de la source ne doit pas remplacer un site correct par un
-    # site vide : mieux vaut refuser de publier et le dire.
-    minimum = config["minimum_publiable"]
-    if not options.siecles and index["total"] < minimum:
-        print(f"ERREUR : {index['total']} entrées seulement, minimum {minimum}. "
-              "On ne publie pas.", file=sys.stderr)
-        return 1
     return 0
 
 

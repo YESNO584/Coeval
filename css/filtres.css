@@ -10,11 +10,18 @@
   background: var(--carte);
 }
 
+/* « min-width: 0 » n'est pas un détail : par défaut un élément de flex
+   refuse de descendre sous la largeur de son contenu. Sans lui, un groupe
+   plus large que l'écran débordait à droite au lieu de passer à la ligne —
+   « Événements » et « centré sur » étaient coupés sur téléphone, constaté le
+   2026-09-20. */
 .groupe-filtre {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem 0.8rem;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .titre-filtre {
@@ -29,12 +36,15 @@
   display: inline-flex;
   gap: 0.35rem;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   color: var(--gris);
   font-size: 0.85rem;
 }
 
 .champ input,
 .champ select {
+  min-width: 0;
   max-width: 11rem;
   padding: 0.25rem 0.35rem;
   border: 1px solid var(--trait);
@@ -221,7 +231,19 @@
     padding: 0.6rem;
   }
 
+  /* Chaque groupe sur sa propre ligne, et son titre au-dessus : côte à
+     côte, trois groupes ne tiennent pas dans 360 px. */
+  .groupe-filtre {
+    flex: 1 1 100%;
+  }
+
+  .titre-filtre {
+    flex: 1 1 100%;
+  }
+
   .champ input[type="text"] {
-    width: 5rem;
+    flex: 1 1 6rem;
+    width: auto;
+    min-width: 6rem;
   }
 }

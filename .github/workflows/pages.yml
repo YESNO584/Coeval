@@ -116,28 +116,35 @@ jobs:
             python -u construire.py --budget-minutes 120
           fi
 
+      # Le site et le socle se publient ensemble, en un seul bloc : chaque
+      # publication remplace tout. Une correction de style emportait donc les
+      # données avec elle quand l'atelier n'avait pas de socle sous la main —
+      # 1 155 entrées effacées le 2026-09-20 par un commit de commentaires.
+      # L'atelier qui n'a rien fabriqué reprend maintenant le socle en ligne
+      # et le remet tel quel : le code et les données évoluent chacun de leur
+      # côté.
       - name: Assembler le site
+        env:
+          SITE: https://yesno584.github.io/Coeval
         run: |
           mkdir -p site
           cp index.html site/
           cp -r css js site/
-          if [ -d socle/public/data ]; then
+          if [ -s socle/public/data/index.json ]; then
             cp -r socle/public/data site/data
-            echo "socle publié : $(ls site/data | wc -l) fichiers"
+            echo "socle fabriqué : $(ls site/data | wc -l) fichiers"
           else
-            echo "::warning::pas de socle cette fois — la page interrogera Wikidata en direct"
+            echo "Rien de fabriqué cette fois : on reprend le socle en ligne."
+            python socle/reprendre_en_ligne.py "$SITE" site/data || true
           fi
 
-      # Un site publié sans son code s'afficherait vide, sans rien dire de
-      # son échec. Vérifier avant de publier, comme le fait AN-API.
+      # Un site publié sans son code, ou sans ses données, s'afficherait vide
+      # sans rien dire de son échec. Refuser de publier laisse en ligne la
+      # version précédente, qui elle fonctionne. Vérifier avant de publier,
+      # comme le fait AN-API.
       - name: Refuser de publier un site incomplet
         run: |
-          for fichier in site/index.html site/css/base.css site/js/app.js; do
-            if [ ! -s "$fichier" ]; then
-              echo "::error::$fichier manque ou est vide — on ne publie pas."
-              exit 1
-            fi
-          done
+          python socle/verifier_site.py site
           echo "$(find site -type f | wc -l) fichiers prêts à publier."
 
       - uses: actions/configure-pages@v5

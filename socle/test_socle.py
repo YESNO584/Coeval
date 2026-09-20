@@ -9,10 +9,13 @@ import json
 import pathlib
 import re
 import sys
+import tempfile
 
 import construire
 import modele
+import reprendre_en_ligne
 import requetes
+import verifier_site
 import wikidata
 
 ICI = pathlib.Path(__file__).resolve().parent
@@ -250,6 +253,64 @@ def test_les_metiers_sont_demandes_ensemble():
         manquants = [m for m in categorie["metiers"] if m not in demandes[0]]
         verifier(not manquants,
                  f"{cle} : métiers absents de la requête : {manquants}")
+
+
+def test_un_site_sans_socle_est_refuse():
+    """Le 2026-09-20, un site sans données a été publié et a effacé 1 155
+    entrées. Trois filets l'ont laissé passer ; celui-ci est le dernier."""
+    with tempfile.TemporaryDirectory() as dossier:
+        site = pathlib.Path(dossier)
+        (site / "css").mkdir()
+        (site / "js").mkdir()
+        (site / "index.html").write_text("<html></html>", encoding="utf-8")
+        (site / "css" / "base.css").write_text("body{}", encoding="utf-8")
+        (site / "js" / "app.js").write_text("// app", encoding="utf-8")
+
+        raisons = verifier_site.verifier(site, 500)
+        verifier(any("aucun socle" in r for r in raisons),
+                 f"un site sans socle doit être refusé : {raisons}")
+
+        (site / "data").mkdir()
+        (site / "data" / "index.json").write_text('{"total": 0}', encoding="utf-8")
+        raisons = verifier_site.verifier(site, 500)
+        verifier(any("0 entrées" in r for r in raisons),
+                 f"un socle vide doit être refusé : {raisons}")
+
+        (site / "data" / "index.json").write_text('{"total": 1155}', encoding="utf-8")
+        verifier(verifier_site.verifier(site, 500) == [],
+                 "un site complet doit être accepté")
+
+        (site / "js" / "app.js").write_text("", encoding="utf-8")
+        raisons = verifier_site.verifier(site, 500)
+        verifier(any("app.js" in r for r in raisons),
+                 f"un fichier de code vide doit être refusé : {raisons}")
+
+
+def test_un_nom_de_fichier_venu_du_reseau_est_refuse():
+    """Les noms de fichiers du socle en ligne servent à écrire sur le disque
+    de l'atelier. Ils viennent d'ailleurs : on les refuse plutôt que de les
+    coller à un chemin les yeux fermés."""
+    appels = []
+    original = reprendre_en_ligne.telecharger
+
+    def faux(adresse):
+        appels.append(adresse)
+        return json.dumps({
+            "total": 1000,
+            "siecles": [{"debut": 0, "entrees": 1, "fichier": "../../vole.json"}],
+        }).encode("utf-8")
+
+    reprendre_en_ligne.telecharger = faux
+    try:
+        with tempfile.TemporaryDirectory() as dossier:
+            try:
+                reprendre_en_ligne.reprendre("https://exemple.test",
+                                             pathlib.Path(dossier) / "data", 500)
+                verifier(False, "un nom de fichier hors du dossier doit être refusé")
+            except ValueError as souci:
+                verifier("refusé" in str(souci), f"mauvaise raison : {souci}")
+    finally:
+        reprendre_en_ligne.telecharger = original
 
 
 def main():

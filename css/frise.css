@@ -7,8 +7,38 @@
   justify-content: space-between;
 }
 
+/* Le bouton d'ajout était dans « .zoom », dont tous les boutons font
+   2,1 rem de côté : son texte débordait de son carré. Constaté sur
+   téléphone le 2026-09-20. Il a maintenant sa place à lui. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#ajouter-entree {
+  height: 2.1rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  color: var(--texte);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#ajouter-entree:hover,
+#ajouter-entree:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .zoom {
   display: flex;
+  flex: 0 0 auto;
   gap: 0.3rem;
 }
 

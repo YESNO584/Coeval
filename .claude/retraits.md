@@ -140,6 +140,24 @@ cases incomplètes comme si elles étaient complètes.
 
 ---
 
+### La vérification en shell des trois fichiers indispensables
+*2026-09-20 · `.github/workflows/pages.yml`*
+
+La boucle `for fichier in site/index.html …` est retirée de l'atelier. La
+même règle vit maintenant dans `socle/verifier_site.py`, qui vérifie aussi
+le socle.
+
+**Pourquoi :** elle ne regardait que le code de la page, jamais les données.
+Un socle vide passait, et remplaçait 1 155 entrées par rien. Deux endroits
+pour une même règle finissent toujours par diverger — c'est la leçon des
+quatre copies de la fabrique d'éléments HTML, plus haut dans ce registre.
+
+**Avant de la remettre :** il faudrait une raison de vérifier le code de la
+page sans vérifier ses données. Il n'y en a pas tant que le mode direct est
+éteint : une page sans socle est une page morte.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un
