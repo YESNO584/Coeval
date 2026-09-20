@@ -75,7 +75,14 @@ jobs:
       - name: Retrouver le socle des nuits précédentes
         uses: actions/cache@v4
         env:
-          REGLES: ${{ hashFiles('socle/requetes.py', 'socle/modele.py', 'socle/perimetre.json', 'socle/config.json') }}
+          # wikidata.py et construire.py en font partie depuis le
+          # 2026-09-20 : ils décident comment une case est interrogée, donc
+          # aussi si elle échoue. Sans eux, un correctif qui fait passer une
+          # case ne la ferait jamais rejouer — les échecs notés dans le cache
+          # la feraient sauter chaque nuit, et le correctif resterait lettre
+          # morte. Le prix est qu'une retouche de ces deux fichiers refait la
+          # fabrique entière ; c'est le bon prix pour ce qu'ils commandent.
+          REGLES: ${{ hashFiles('socle/requetes.py', 'socle/modele.py', 'socle/wikidata.py', 'socle/construire.py', 'socle/perimetre.json', 'socle/config.json') }}
         with:
           path: socle/cache
           key: socle-${{ env.REGLES }}-${{ github.run_id }}

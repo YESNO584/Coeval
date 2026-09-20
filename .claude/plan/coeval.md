@@ -255,6 +255,23 @@ Le découpage adaptatif reste juste pour les événements, où la densité varie
 vraiment avec la période. Il ne l'est pas pour une catégorie dont le coût
 tient au nombre de personnes portant le métier, pas à la fenêtre.
 
+**Vérifié le 2026-09-20**, fabrique locale sur le −300 : les artistes rendent
+40 entrées retenues sur 54 disponibles, la case qui n'avait jamais abouti en
+neuf tentatives. Les philosophes passent aussi (40 sur 47).
+
+Trois autres cases ont échoué ce soir-là — souverains, scientifiques,
+événements — et **ce n'est pas le correctif**. Le témoin le dit : la requête
+des philosophes, mesurée à 5,5 s une heure plus tôt, échoue à 47 s sur la
+même fenêtre. Le service était fortement ralenti, après une série de requêtes
+lourdes. Aucune durée de cette soirée ne se compare à celles d'avant ; la
+seule chose qui vaut, et elle vaut justement parce qu'elle a été obtenue dans
+ces conditions dégradées, c'est qu'une case qui échouait toujours a réussi.
+
+Reste donc à confirmer, sur un service au repos, que les souverains, les
+scientifiques et les événements passent toujours. Ils ne sont pas censés
+avoir changé : le découpage sur réponse pleine ne se déclenche qu'au-dessus
+de 400 lignes, et ces cases en rendent quelques dizaines.
+
 ### 3.4 Les deux ingrédients qui font passer une requête de 58 s à 5,7 s
 
 ```sparql
