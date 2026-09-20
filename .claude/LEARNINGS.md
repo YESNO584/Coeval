@@ -368,3 +368,31 @@ sans lui. Vérifié dans ce conteneur le 2026-09-13.
   la suivante est le moyen le plus simple d'y laisser un chiffre faux pendant
   des mois. La compétence `claude-api` les donne à jour ; c'est elle qui fait
   foi, pas un document interne.
+
+---
+
+## Un service partagé se mesure toujours avec un témoin
+
+- Le 2026-09-20, trois catégories ont échoué juste après un correctif. Elles
+  ressemblaient à trois régressions. Une quatrième requête, **inchangée et
+  mesurée une heure plus tôt à 5,5 secondes**, échouait à 47 secondes sur la
+  même fenêtre : c'était le service qui était ralenti, pas le code.
+- *La règle :* sur une ressource partagée dont on ne contrôle pas la charge —
+  Wikidata, n'importe quelle API publique —, **aucune durée ne se compare à
+  une durée prise à un autre moment**. Toute série de mesures doit inclure une
+  requête témoin, connue et inchangée, lancée dans la même série. Sans elle on
+  ne sait pas si l'on mesure son code ou l'humeur du serveur.
+- *Corollaire :* un résultat obtenu pendant que le service est dégradé n'est
+  pas sans valeur — il est plus fort. Une case qui réussit alors que le témoin
+  échoue a vraiment été réparée.
+
+## Ce qui décide du contenu d'un cache doit entrer dans son empreinte
+
+- Le cache de la fabrique est invalidé par une empreinte des fichiers de
+  règles. Elle couvrait les requêtes et les réglages, pas le code qui décide
+  **comment** une case est interrogée. Or les échecs sont notés dans le cache
+  pour ne pas se rejouer chaque nuit : un correctif qui fait passer une case
+  n'aurait jamais été essayé, puisque la case notée en échec aurait été sautée.
+- *À vérifier à chaque fois qu'un cache garde un échec :* la liste des
+  fichiers qui l'invalident contient-elle tout ce qui peut transformer cet
+  échec en succès ?
