@@ -94,6 +94,52 @@ ans, où le service de libellés tenait.
 
 ---
 
+### La boucle « un métier à la fois »
+*2026-09-20 · `socle/construire.py`*
+
+La boucle `for metier in categorie["metiers"]` est retirée : les métiers
+d'une catégorie repartent dans une seule requête, comme avant le
+2026-09-19.
+
+**Pourquoi :** elle avait été écrite en croyant qu'un gros métier coûtait
+trop cher demandé avec les autres. La mesure dit l'inverse. Le peintre seul
+met 65 secondes et échoue (504, deux fois de suite) ; les cinq métiers
+d'« artistes » réunis répondent en 20 secondes et rendent 202 personnes. Un
+`VALUES` à plusieurs entrées laisse le planificateur passer par les dates ;
+avec une seule valeur il parcourt tous les peintres. La boucle coûtait donc
+cinq requêtes au lieu d'une, et chacune trois fois plus cher.
+
+**Avant de la remettre :** il faudrait une mesure montrant un métier qui
+passe seul et pas en groupe. Aucune ne l'a jamais montré ; celle qui a servi
+à écrire la boucle était une erreur 504 attribuée à la taille du métier
+sans avoir comparé au groupe.
+
+### Le découpage d'une fenêtre simplement lente
+*2026-09-20 · `socle/wikidata.py`, `par_tranches`*
+
+Le délai court qui déclenchait la coupe (`DELAI_DECOUPE_S`, 30 s) devient un
+réglage passé par l'appelant. Les catégories de métier passent
+`DELAI_MAX_S` : elles ne sont plus coupées pour cause de lenteur, seulement
+sur refus du service ou sur réponse pleine.
+
+**Pourquoi :** rétrécir la fenêtre ralentit ces requêtes. Mesuré le
+2026-09-19 : cinq ans dépassent 90 secondes là où un siècle entier en met
+20. Comme ces requêtes répondent entre 20 et 68 secondes, le seuil de 30 s
+les déclarait toutes trop larges, et la case dépensait ses cinq minutes en
+découpages sans qu'une seule requête aboutisse. C'est la cause de zéro
+artiste dans le socle.
+
+**Toujours en place pour les événements**, où le coût suit vraiment la
+période : le § 3.3 quater du plan porte la mesure qui le justifie.
+
+**Ajouté au passage**, et c'est un manque comblé, pas un retrait : une
+réponse qui atteint le plafond de la requête est désormais découpée. Elle a
+perdu des lignes en silence — les artistes de 1500 à 1600 rendent exactement
+400 lignes, le plafond. Sans cela, relever le seuil aurait fait publier des
+cases incomplètes comme si elles étaient complètes.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un

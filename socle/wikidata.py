@@ -12,6 +12,7 @@ Trois contraintes mesurées le 2026-09-18 commandent ce fichier :
   quelle, jamais avalée.
 """
 import json
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -20,8 +21,10 @@ import urllib.request
 SERVICE = "https://query.wikidata.org/sparql"
 IDENTIFICATION = "Coeval/0.1 (https://github.com/YESNO584/Coeval; fabrique du socle)"
 DELAI_MAX_S = 70
-# Au-delà, une fenêtre encore divisible est jugée trop large : couper coûte
-# moins cher qu'attendre le refus du service.
+# Délai par défaut quand la fenêtre est encore divisible. Il vaut pour les
+# catégories dont le coût suit vraiment la période — les événements. Il ne
+# vaut pas pour les métiers, où rétrécir la fenêtre ralentit : voir
+# par_tranches, et le § 3.3 decies du plan.
 DELAI_DECOUPE_S = 30
 TENTATIVES = 3
 ATTENTE_S = [15, 60]
@@ -130,22 +133,49 @@ def interroger(requete, tentatives=TENTATIVES, delai=DELAI_MAX_S):
     raise ServiceIndisponible(f"après {tentatives} tentative(s) : {derniere}")
 
 
-def par_tranches(fabriquer, debut, fin, largeur_minimale=5):
-    """Récupère une fenêtre en la coupant en deux tant que le service refuse.
+def par_tranches(fabriquer, debut, fin, largeur_minimale=5, saturation=None,
+                 delai_decoupe=DELAI_DECOUPE_S):
+    """Récupère une fenêtre en la coupant en deux tant qu'elle ne passe pas.
 
     Une fenêtre large tient sur les périodes creuses et échoue sur les
     périodes denses. Plutôt que de choisir une largeur unique — trop petite
     partout, ou trop grande quelque part —, on part large et on coupe à
     l'échec. La fabrique s'adapte ainsi d'elle-même à la densité réelle.
+
+    Deux raisons de couper, et deux seulement :
+
+    - le service refuse. C'est une information : la fenêtre est trop large ;
+    - la réponse est pleine, c'est-à-dire qu'elle atteint « saturation »,
+      le plafond de la requête. Des lignes ont alors été perdues en
+      silence. Mesuré le 2026-09-19 : les artistes de 1500 à 1600 rendent
+      exactement 400 lignes, le plafond — donc un nombre inconnu de
+      personnes manquait, sans que rien ne le signale.
+
+    La lenteur, elle, n'en est pas une. « delai_decoupe » permettait de
+    couper une requête simplement trop longue ; mesuré le 2026-09-19, c'est
+    faux pour les catégories fondées sur le métier : une fenêtre de cinq ans
+    y dépasse 90 secondes quand un siècle entier en met 20. Leur coût tient
+    au nombre de personnes portant le métier, pas à la fenêtre. L'appelant
+    qui le sait passe DELAI_MAX_S et laisse le service décider.
     """
     dernier = fin - debut <= largeur_minimale
+
+    def couper():
+        milieu = debut + (fin - debut) // 2
+        gauche = par_tranches(fabriquer, debut, milieu, largeur_minimale,
+                              saturation, delai_decoupe)
+        droite = par_tranches(fabriquer, milieu, fin, largeur_minimale,
+                              saturation, delai_decoupe)
+        return gauche + droite
+
     try:
-        # Tant qu'on peut encore couper : une seule tentative, et un délai
-        # court. L'échec est alors une information — « trop large » — et non
-        # une panne à retenter.
+        # Tant qu'on peut encore couper : une seule tentative. L'échec est
+        # alors une information — « trop large » — et non une panne à
+        # retenter.
         if dernier:
-            return interroger(fabriquer(debut, fin))
-        return interroger(fabriquer(debut, fin), 1, DELAI_DECOUPE_S)
+            lignes = interroger(fabriquer(debut, fin))
+        else:
+            lignes = interroger(fabriquer(debut, fin), 1, delai_decoupe)
     except (DebitLimite, TempsEcoule):
         # Découper ne sert à rien quand c'est le débit qui est limité, ni
         # quand le temps est épuisé : on remonte pour que l'appelant
@@ -154,10 +184,16 @@ def par_tranches(fabriquer, debut, fin, largeur_minimale=5):
     except ServiceIndisponible:
         if dernier:
             raise
-        milieu = debut + (fin - debut) // 2
-        gauche = par_tranches(fabriquer, debut, milieu, largeur_minimale)
-        droite = par_tranches(fabriquer, milieu, fin, largeur_minimale)
-        return gauche + droite
+        return couper()
+
+    if saturation is not None and len(lignes) >= saturation:
+        if not dernier:
+            return couper()
+        # Plus rien à couper : on le dit plutôt que de laisser croire que la
+        # fenêtre est complète.
+        print(f"  ! {debut} à {fin} : réponse pleine ({len(lignes)} lignes), "
+              f"des entrées manquent", file=sys.stderr, flush=True)
+    return lignes
 
 
 def par_lots(fabriquer, identifiants, taille):

@@ -75,27 +75,34 @@ def recuperer_case(cle, categorie, debut, fin, config, fonctions):
     source = categorie["source"]
 
     if source == "metier":
-        # Un métier à la fois. Groupés, les cinq métiers de « artistes »
-        # dépassent le budget du service même découpés en tranches de dix
-        # ans : « écrivain » à lui seul compte des centaines de milliers de
-        # personnes. Constaté le 2026-09-19, sur une erreur 504 que le
-        # découpage temporel ne résolvait pas.
-        lignes = []
-        for metier in categorie["metiers"]:
-            lignes.extend(wikidata.par_tranches(
-                lambda a, b, m=metier: requetes.personnes_vivantes([m], a, b, limite),
-                debut, fin))
+        # Tous les métiers de la catégorie en une seule requête. Un métier
+        # seul coûte plus cher que plusieurs ensemble : mesuré le
+        # 2026-09-19, le peintre seul met 65 s et échoue (504, deux fois de
+        # suite), les cinq métiers d'« artistes » réunis répondent en 20 s
+        # et rendent 202 personnes. Un VALUES à plusieurs entrées laisse le
+        # planificateur passer par les dates ; avec une seule valeur il
+        # parcourt tous les peintres.
+        #
+        # Et pas de découpage à l'impatience : rétrécir la fenêtre ralentit
+        # ces requêtes — cinq ans dépassent 90 s quand un siècle en met 20.
+        # On laisse le service aller au bout de son temps ; il reste le
+        # découpage sur refus et sur réponse pleine.
+        lignes = wikidata.par_tranches(
+            lambda a, b: requetes.personnes_vivantes(
+                categorie["metiers"], a, b, limite),
+            debut, fin, saturation=limite,
+            delai_decoupe=wikidata.DELAI_MAX_S)
         noms = recuperer_noms(lignes, ("p",), config)
         return modele.convertir_personnes(lignes, cle, noms)
     if source == "fonction":
         lignes = wikidata.par_tranches(
             lambda a, b: requetes.souverains_regnants(fonctions, a, b, limite),
-            debut, fin)
+            debut, fin, saturation=limite)
         noms = recuperer_noms(lignes, ("p", "fonction"), config)
         return modele.convertir_souverains(lignes, noms)
     lignes = wikidata.par_tranches(
         lambda a, b: requetes.evenements(categorie["classes"], a, b, limite),
-        debut, fin)
+        debut, fin, saturation=limite)
     noms = recuperer_noms(lignes, ("e", "classe"), config)
     return modele.convertir_evenements(lignes, noms)
 

@@ -10,6 +10,7 @@ import pathlib
 import re
 import sys
 
+import construire
 import modele
 import requetes
 import wikidata
@@ -177,6 +178,78 @@ def test_tranches_ne_decoupent_pas_une_limite_de_debit():
                  f"une seule tentative attendue, {len(appels)} faites")
     finally:
         wikidata.interroger = original
+
+
+def test_une_reponse_pleine_est_decoupee():
+    """Une réponse qui atteint le plafond a perdu des lignes en silence.
+
+    Mesuré le 2026-09-19 : les artistes de 1500 à 1600 rendent exactement
+    400 lignes, le plafond de la requête. Sans ce découpage, la fabrique
+    publiait cette case comme complète.
+    """
+    appels = []
+
+    def repondre(requete, *reste):
+        debut, fin = requete
+        appels.append((debut, fin))
+        # Pleine tant que la fenêtre dépasse 25 ans.
+        return ["x"] * (4 if fin - debut > 25 else 1)
+
+    original = wikidata.interroger
+    wikidata.interroger = repondre
+    try:
+        lignes = wikidata.par_tranches(lambda a, b: (a, b), 1500, 1600,
+                                       saturation=4)
+    finally:
+        wikidata.interroger = original
+    verifier(len(appels) > 1, "une réponse pleine doit être découpée")
+    feuilles = sorted(f for f in appels if f[1] - f[0] <= 25)
+    verifier(feuilles == [(1500, 1525), (1525, 1550), (1550, 1575), (1575, 1600)],
+             f"les tranches doivent couvrir toute la fenêtre : {feuilles}")
+    verifier(len(lignes) == 4,
+             f"les quatre tranches doivent être réunies, {len(lignes)} obtenues")
+
+
+def test_une_reponse_non_pleine_n_est_pas_decoupee():
+    appels = []
+
+    def repondre(requete, *reste):
+        appels.append(requete)
+        return ["x"] * 3
+
+    original = wikidata.interroger
+    wikidata.interroger = repondre
+    try:
+        lignes = wikidata.par_tranches(lambda a, b: (a, b), 1500, 1600,
+                                       saturation=4)
+    finally:
+        wikidata.interroger = original
+    verifier(len(appels) == 1,
+             f"une seule requête attendue, {len(appels)} faites")
+    verifier(len(lignes) == 3, "les lignes doivent être rendues telles quelles")
+
+
+def test_les_metiers_sont_demandes_ensemble():
+    """Un métier seul coûte plus cher que plusieurs ensemble : 65 s et un
+    504 pour le peintre, 20 s et 202 personnes pour les cinq métiers
+    réunis. Mesuré le 2026-09-19."""
+    config = json.loads((RACINE / "socle" / "config.json").read_text("utf-8"))
+    for cle, categorie in config["categories"].items():
+        if categorie["source"] != "metier":
+            continue
+        demandes = []
+        original = wikidata.par_tranches
+        wikidata.par_tranches = lambda fabriquer, a, b, **reste: (
+            demandes.append(fabriquer(a, b)) or [])
+        try:
+            construire.recuperer_case(cle, categorie, 1500, 1600, config, [])
+        finally:
+            wikidata.par_tranches = original
+        verifier(len(demandes) == 1,
+                 f"{cle} : une seule requête attendue, {len(demandes)} faites")
+        manquants = [m for m in categorie["metiers"] if m not in demandes[0]]
+        verifier(not manquants,
+                 f"{cle} : métiers absents de la requête : {manquants}")
 
 
 def main():
