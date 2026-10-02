@@ -71,8 +71,8 @@ async function charger(page, debut, fin) {
   dit('2. le retour est barré', !(await page.$('#barrage[hidden]')));
   await page.click('#barrage .bouton-principal');
   await page.waitForTimeout(800);
-  dit('   message après enregistrement',
-      JSON.stringify(await page.textContent('#etat')));
+  dit('   le cadre d\'état reste masqué au repos',
+      !(await page.isVisible('#etat')));
   dit('   promesses ratées',
       JSON.stringify(await page.evaluate(() => window.__ratees)).slice(0, 300));
   dit('   sélecteur disponible',
@@ -179,7 +179,15 @@ async function charger(page, debut, fin) {
   dit('   le fichier sur le disque est intact',
       (await lireLeFichier(page)).operations.length);
 
-  dit('8. erreurs JS', erreurs.length === 0 ? 'aucune' : JSON.stringify(erreurs.slice(0, 3)));
+  // --- Le cadre d'état : masqué au repos, présent quand il faut ---
+  dit('8. cadre d\'état masqué à l\'ouverture', !(await page.isVisible('#etat')));
+  await charger(page, '1700', '1799');
+  dit('   mais présent quand la recherche ne trouve rien',
+      await page.isVisible('#etat'));
+  dit('   et il dit quoi',
+      JSON.stringify((await page.textContent('#etat')).slice(0, 90)));
+
+  dit('9. erreurs JS', erreurs.length === 0 ? 'aucune' : JSON.stringify(erreurs.slice(0, 3)));
   await page.screenshot({ path: process.env.CAPTURE || '/tmp/coeval-edition.png', fullPage: true });
   await navigateur.close();
 })();

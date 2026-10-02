@@ -105,6 +105,14 @@
 
 /* L'attente se voit. Une page immobile pendant vingt secondes ressemble à
    une panne ; une roue qui tourne dit que le travail avance. */
+/* « display: flex » l'emporterait sur l'attribut « hidden », qui n'est qu'un
+   « display: none » de faible priorité : sans cette première règle le cadre
+   resterait visible quand on le masque. Même piège que la frise sous le
+   panneau de détail, constaté le 2026-09-19. */
+#etat[hidden] {
+  display: none;
+}
+
 #etat[data-occupe="oui"] {
   display: flex;
   gap: 0.6rem;
@@ -134,105 +142,14 @@
   }
 }
 
-/* Sans cette première règle, la frise ne se masque pas quand le panneau de
-   détail s'ouvre : « display: flex » l'emporte sur l'attribut « hidden » du
-   navigateur, qui n'est qu'un « display: none » de faible priorité. Constaté
-   le 2026-09-19 — le panneau s'affichait, et la frise restait dessous. */
-.zone-frise[hidden] {
-  display: none;
-}
-
-.zone-frise {
-  display: flex;
-  align-items: flex-start;
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  background: var(--carte);
-  overflow: hidden;
-}
-
-.colonne {
-  flex: 0 0 9.5rem;
-  border-right: 1px solid var(--trait);
-  padding-top: 8px;
-}
-
-.colonne[hidden] {
-  display: none;
-}
-
-.bande {
-  display: flex;
-  gap: 0.4rem;
-  align-items: flex-start;
-  justify-content: space-between;
-  box-sizing: border-box;
-  padding: 0 0.5rem;
-  border-bottom: 1px solid var(--trait);
-  overflow: hidden;
-  font-size: 0.78rem;
-  line-height: 1.25;
-}
-
-.nom-bande {
-  color: var(--texte);
-  font-weight: 600;
-}
-
-.compte-bande {
-  color: var(--gris);
-  font-variant-numeric: tabular-nums;
-}
-
-.zone-frise .cadre {
-  flex: 1 1 auto;
-  border: 0;
-  border-radius: 0;
-}
-
-.separateur {
-  stroke: var(--trait);
-  stroke-width: 1;
-}
-
-.entree.type-evenement .barre {
-  fill: var(--alerte);
-}
-
-.entree.type-souverain .barre {
-  fill: #7a5aa8;
-}
-
-.losange {
-  stroke: var(--carte);
-  stroke-width: 1;
-}
-
-/* Sur un écran étroit, la colonne de regroupement mangeait 45 % de la
-   largeur — mesuré : 152 px sur 375, contre 189 px pour la frise elle-même.
-   Elle se resserre, et son compte passe sous le nom au lieu d'être à côté. */
+/* Sous 360 px, trois groupes de filtres côte à côte ne tiennent pas : chacun
+   prend sa ligne, et son titre passe au-dessus. */
 @media (max-width: 600px) {
-  .colonne {
-    flex: 0 0 5.5rem;
-  }
-
-  .bande {
-    display: block;
-    padding: 0 0.35rem;
-    font-size: 0.7rem;
-  }
-
-  .compte-bande {
-    display: block;
-  }
-
   .filtres {
     gap: 0.5rem 0.9rem;
     padding: 0.6rem;
   }
 
-  /* Chaque groupe sur sa propre ligne, et son titre au-dessus : côte à
-     côte, trois groupes ne tiennent pas dans 360 px. */
   .groupe-filtre {
     flex: 1 1 100%;
   }

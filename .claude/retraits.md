@@ -204,6 +204,39 @@ correction qui ne s'applique pas, ou qui s'applique de travers.
 
 ---
 
+### Les messages d'état qui n'alertaient de rien
+*2026-10-02 · `js/app.js` → `js/etat.js`*
+
+Le cadre d'état ne s'affiche plus que pendant une attente ou sur un
+problème. « 5 entrées entre -63 et 80 », « Posez vos filtres, puis cliquez
+sur Charger », « Reparti de zéro », « Modifications enregistrées dans X » ne
+l'ouvrent plus — les messages existent toujours dans le code, ils ne sont
+simplement plus montrés quand rien ne presse.
+
+**Pourquoi :** un cadre toujours présent finit par ne plus être lu, y
+compris le jour où il porte une vraie alerte. Ce qu'il disait est déjà
+visible ailleurs : le compte d'entrées dans l'encart de densité, le fichier
+en cours dans le repère en haut à droite, le résultat sur la frise
+elle-même.
+
+**Ce qui reste, et qu'il ne faut pas retirer :** la roue de chargement, les
+messages d'erreur, et l'explication quand une recherche ne trouve rien. Ce
+dernier point est une règle du plan (§ 8 bis) : une frise vide sans
+explication ressemble à une panne.
+
+### « interrogées en direct depuis votre navigateur », au pied de page
+*2026-10-02 · `index.html`*
+
+Remplacé par « préparées chaque nuit et publiées avec la page ».
+
+**Pourquoi :** c'était faux depuis que le mode direct est éteint
+(2026-09-19). La page ne parle plus à Wikidata ; elle lit le socle.
+
+**Avant de le remettre :** il faudrait rallumer `DIRECT_AUTORISE`. La phrase
+et le réglage vont ensemble.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un

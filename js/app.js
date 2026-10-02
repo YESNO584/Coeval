@@ -10,6 +10,7 @@ import { creer } from "./html.js";
 import * as edition from "./edition.js";
 import { demarrer } from "./demarrage.js";
 import * as travail from "./travail.js";
+import * as bandeau from "./etat.js";
 import { accueillir, expliquerLeVide } from "./accueil.js";
 import { resumerLAffichage } from "./densite.js";
 import {
@@ -20,7 +21,7 @@ import {
   ZOOM_MAX
 } from "./timeline.js";
 
-const zoneEtat = document.querySelector("#etat");
+bandeau.installer(document.querySelector("#etat"));
 const zoneDensite = document.querySelector("#densite");
 const zoneChoix = document.querySelector("#choix");
 const zoneFiltres = document.querySelector("#filtres");
@@ -44,17 +45,7 @@ const etat = {
 
 let filtres = null;
 
-// L'attente se voit : une roue qui tourne à côté du texte de l'étape. Une
-// page immobile pendant vingt secondes ressemble à une panne.
-function annoncer(texte, enPanne) {
-  zoneEtat.replaceChildren();
-  if (etat.occupe) {
-    zoneEtat.append(creer("span", "roue"));
-  }
-  zoneEtat.append(creer("span", "texte-etat", texte));
-  zoneEtat.dataset.panne = enPanne === true ? "oui" : "non";
-  zoneEtat.dataset.occupe = etat.occupe ? "oui" : "non";
-}
+const annoncer = (texte, enPanne) => bandeau.annoncer(texte, enPanne, etat.occupe);
 
 function recouvre(a, b) {
   return a.debut.annee <= b.fin.annee && a.fin.annee >= b.debut.annee;
@@ -179,11 +170,7 @@ async function recharger() {
   } finally {
     etat.occupe = false;
     filtres.verrouiller(false);
-    zoneEtat.dataset.occupe = "non";
-    const roue = zoneEtat.querySelector(".roue");
-    if (roue !== null) {
-      roue.remove();
-    }
+    bandeau.finDAttente();
   }
 }
 

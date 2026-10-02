@@ -148,6 +148,9 @@ footer a {
 }
 
 .fichier-travail {
+  /* Il reste à droite même quand il passe à la ligne, sur écran étroit :
+     « en haut à droite » doit rester vrai partout. */
+  margin-left: auto;
   max-width: 100%;
   overflow: hidden;
   padding: 0.3rem 0.7rem;
