@@ -130,10 +130,20 @@ async function charger(page, debut, fin) {
   fichier = await lireLeFichier(page);
   dit('5. opérations après le 2e enregistrement',
       fichier === null ? 'AUCUN FICHIER' : fichier.operations.length);
+  // Le format groupe les champs d'une entité sous « champs » : on cherche
+  // la valeur là où elle est, pas où elle était avant le 2026-10-02.
+  const valeurs = (f) => (f === null ? [] : f.operations.flatMap(
+    (o) => Object.values(o.champs || {}).map((v) => v.apres)));
   dit('   la 1re série est toujours là',
-      fichier !== null && fichier.operations.some(o => o.apres === 'NOM CORRIGÉ'));
+      valeurs(fichier).includes('NOM CORRIGÉ'));
   dit('   la 2e série aussi',
-      fichier !== null && fichier.operations.some(o => o.apres === 'seconde série'));
+      valeurs(fichier).includes('seconde série'));
+  dit('   forme de la 1re opération',
+      JSON.stringify(fichier === null ? null : fichier.operations[0]).slice(0, 190));
+  dit('   et chaque champ garde la valeur vue',
+      fichier !== null && fichier.operations.every(
+        (o) => o.operation !== 'modification'
+          || Object.values(o.champs || {}).every((v) => v.avant !== undefined)));
 
   // --- Le clic sur le repère pendant que du travail est en cours ---
   const encore = await page.$$('#frise .entree');

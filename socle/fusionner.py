@@ -20,7 +20,7 @@ import re
 import sys
 
 ICI = pathlib.Path(__file__).resolve().parent
-VERSION_MAX = 1
+VERSION_MAX = 2
 FORME_CIBLE = re.compile(r"^(Q\d+|tmp-\d+)$")
 FORME_ANNEE = re.compile(r"^-?\d{1,6}$")
 ANNEE_MIN, ANNEE_MAX = -300000, 3000
@@ -74,9 +74,33 @@ def verifier_annee(valeur, quoi):
         raise Refus(f"{quoi} : {nombre} hors des bornes {ANNEE_MIN}…{ANNEE_MAX}")
 
 
+def champs_de(operation):
+    """Les champs touchés, quelle que soit la version du fichier.
+
+    La version 1 écrivait une opération par champ — « champ », « avant » et
+    « apres » à la racine. La version 2 groupe les champs d'une même entité
+    sous « champs ». Les deux se lisent : un fichier enregistré avant le
+    changement porte du travail que personne ne refera.
+    """
+    champs = operation.get("champs")
+    if isinstance(champs, dict):
+        return champs
+    champ = operation.get("champ")
+    if champ is None:
+        return {}
+    return {champ: {"avant": operation.get("avant"),
+                    "apres": operation.get("apres")}}
+
+
 def verifier_operation(operation, socle):
-    """Lève Refus si l'opération n'est pas recevable. Renvoie « conflit » si
-    elle l'est mais que le socle a changé depuis."""
+    """Lève Refus si l'opération n'est pas recevable.
+
+    Renvoie le dictionnaire des champs en conflit — vide s'il n'y en a pas.
+    **Le verdict est par champ, pas par opération** : grouper les champs
+    d'une entité dans une seule ligne ne doit pas faire rejeter trois
+    corrections justes parce que la quatrième s'appuie sur une valeur que la
+    fabrique a changée depuis.
+    """
     quoi = operation.get("operation")
     if quoi not in OPERATIONS:
         raise Refus(f"opération inconnue : « {quoi} »")
@@ -93,27 +117,35 @@ def verifier_operation(operation, socle):
         raise Refus(f"{identifiant} est provisoire : seul un ajout est possible")
 
     if quoi == "suppression":
-        return None
+        return {}
 
-    champ = operation.get("champ")
-    if champ not in CHAMPS_CONNUS:
-        raise Refus(f"champ inconnu ou non modifiable : « {champ} »")
+    champs = champs_de(operation)
+    if not champs:
+        raise Refus(f"{identifiant} : aucune valeur, cette opération ne dit rien")
 
-    apres = operation.get("apres")
-    if champ in ("debut", "fin"):
-        verifier_annee(apres, f"{identifiant}.{champ}")
-    else:
-        verifier_texte("" if apres is None else apres, f"{identifiant}.{champ}")
+    conflits = {}
+    for champ, valeurs in champs.items():
+        if champ not in CHAMPS_CONNUS:
+            raise Refus(f"champ inconnu ou non modifiable : « {champ} »")
+        if not isinstance(valeurs, dict):
+            raise Refus(f"{identifiant}.{champ} : attendu « avant » et « apres »")
 
-    if quoi == "modification":
-        if "avant" not in operation or operation["avant"] is None:
+        apres = valeurs.get("apres")
+        if champ in ("debut", "fin"):
+            verifier_annee(apres, f"{identifiant}.{champ}")
+        else:
+            verifier_texte("" if apres is None else apres, f"{identifiant}.{champ}")
+
+        if quoi != "modification":
+            continue
+        if valeurs.get("avant") is None:
             raise Refus(f"{identifiant}.{champ} : « avant » manque, "
                         "on ne peut pas vérifier que la valeur est à jour")
         actuelle = valeur_actuelle(socle[identifiant], champ)
-        if str(operation["avant"]) != actuelle:
-            return (f"le socle dit « {actuelle} », la contribution a vu "
-                    f"« {operation['avant']} »")
-    return None
+        if str(valeurs["avant"]) != actuelle:
+            conflits[champ] = (f"le socle dit « {actuelle} », la contribution "
+                               f"a vu « {valeurs['avant']} »")
+    return conflits
 
 
 def lire_fichier(chemin):
@@ -138,15 +170,30 @@ def examiner(chemins, socle):
         for operation in contenu.get("operations", []):
             numero = operation.get("numero", "?")
             try:
-                conflit = verifier_operation(operation, socle)
+                enConflit = verifier_operation(operation, socle)
             except Refus as souci:
                 refusees.append((chemin, numero, str(souci)))
                 continue
-            if conflit is not None:
-                conflits.append((chemin, numero, operation, conflit))
-            else:
-                acceptees.append((chemin, numero, operation))
+            for champ, raison in enConflit.items():
+                conflits.append((chemin, numero, operation, champ, raison))
+            # Les champs à jour de la même opération restent acceptables.
+            champs = champs_de(operation)
+            retenus = {c: v for c, v in champs.items() if c not in enConflit}
+            if champs and not retenus:
+                continue
+            acceptees.append((chemin, numero, sans_les_conflits(operation, retenus)))
     return acceptees, refusees, conflits
+
+
+def sans_les_conflits(operation, retenus):
+    """L'opération réduite à ses champs acceptables."""
+    if not retenus and "champs" not in operation and "champ" not in operation:
+        return operation
+    reduite = {c: v for c, v in operation.items()
+               if c not in ("champs", "champ", "avant", "apres")}
+    if retenus:
+        reduite["champs"] = retenus
+    return reduite
 
 
 def rapporter(acceptees, refusees, conflits):
@@ -154,12 +201,16 @@ def rapporter(acceptees, refusees, conflits):
           f"{len(refusees)} refusée(s)\n")
     for chemin, numero, operation in acceptees:
         cible = operation["cible"]["id"]
-        champ = operation.get("champ") or "—"
-        print(f"  ✓ {chemin}#{numero} {cible}.{champ} → "
-              f"{str(operation.get('apres'))[:60]}")
-    for chemin, numero, operation, raison in conflits:
+        champs = champs_de(operation)
+        if not champs:
+            print(f"  ✓ {chemin}#{numero} {cible} : {operation['operation']}")
+            continue
+        for champ, valeurs in champs.items():
+            print(f"  ✓ {chemin}#{numero} {cible}.{champ} → "
+                  f"{str(valeurs.get('apres'))[:60]}")
+    for chemin, numero, operation, champ, raison in conflits:
         cible = operation["cible"]["id"]
-        print(f"  ! {chemin}#{numero} {cible}.{operation.get('champ')} : {raison}")
+        print(f"  ! {chemin}#{numero} {cible}.{champ} : {raison}")
     for chemin, numero, raison in refusees:
         repere = f"#{numero}" if numero is not None else ""
         print(f"  ✗ {chemin}{repere} : {raison}")

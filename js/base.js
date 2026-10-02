@@ -74,6 +74,23 @@ function entreeNeuve(id, type) {
   };
 }
 
+// Les champs touchés par une opération, quelle que soit la version du
+// fichier. La version 1 écrivait une opération par champ (« champ »,
+// « avant », « apres » à la racine) ; la version 2 les groupe par entité
+// sous « champs ». Un fichier enregistré avant le 2026-10-02 doit rester
+// lisible : il porte du travail que personne ne refera.
+function champsDe(operation) {
+  if (operation.champs !== undefined && operation.champs !== null) {
+    return operation.champs;
+  }
+  if (operation.champ === undefined || operation.champ === null) {
+    return {};
+  }
+  return {
+    [operation.champ]: { avant: operation.avant, apres: operation.apres },
+  };
+}
+
 // Applique les opérations d'un fichier sur une liste d'entrées du socle.
 //
 // Rend les entrées corrigées et la liste des désaccords. Les entrées ne sont
@@ -101,12 +118,17 @@ export function appliquer(entrees, operations) {
       continue;
     }
 
+    // Une opération porte tous les champs touchés d'une même entité. Le
+    // format d'avant en écrivait un par champ ; « champsDe » lit les deux,
+    // pour qu'un fichier déjà enregistré reste lisible.
+    const champs = champsDe(operation);
+
     if (operation.operation === "ajout") {
       if (!creees.has(id)) {
         creees.set(id, entreeNeuve(id, cible.type));
       }
-      if (operation.champ !== null && operation.champ !== undefined) {
-        ecrireChamp(creees.get(id), operation.champ, String(operation.apres ?? ""));
+      for (const [champ, valeurs] of Object.entries(champs)) {
+        ecrireChamp(creees.get(id), champ, String(valeurs.apres ?? ""));
       }
       continue;
     }
@@ -120,23 +142,21 @@ export function appliquer(entrees, operations) {
       // une anomalie, on ne regarde qu'un morceau du socle à la fois.
       continue;
     }
-    const champ = operation.champ;
-    if (champ === null || champ === undefined) {
-      continue;
+    for (const [champ, valeurs] of Object.entries(champs)) {
+      const actuelle = lireChamp(entree, champ);
+      if (valeurs.avant !== undefined && String(valeurs.avant) !== actuelle) {
+        desaccords.push({
+          id,
+          nom: entree.nom,
+          champ,
+          vueParVous: String(valeurs.avant),
+          dansLeSocle: actuelle,
+          votreVersion: String(valeurs.apres ?? ""),
+        });
+      }
+      ecrireChamp(entree, champ, String(valeurs.apres ?? ""));
+      entree.corrigee = true;
     }
-    const actuelle = lireChamp(entree, champ);
-    if (operation.avant !== undefined && String(operation.avant) !== actuelle) {
-      desaccords.push({
-        id,
-        nom: entree.nom,
-        champ,
-        vueParVous: String(operation.avant),
-        dansLeSocle: actuelle,
-        votreVersion: String(operation.apres ?? ""),
-      });
-    }
-    ecrireChamp(entree, champ, String(operation.apres ?? ""));
-    entree.corrigee = true;
   }
 
   const resultat = [];

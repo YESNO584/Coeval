@@ -838,6 +838,41 @@ entre l'appui et le relâchement.
 **L'essai est au dépôt** (`essais/`), avec le tableau de ce que chaque
 vérification a trouvé. C'est la seule forme qui attrape ces deux défauts.
 
+### L10 — Le fichier groupé par entité ✅ fait le 2026-10-02
+
+Le format passe en version 2. Une opération porte désormais **tous les
+champs touchés d'une même entité**, au lieu d'une opération par champ :
+même information, fichier deux fois plus court, et lisible à l'œil.
+
+Les retouches successives d'un même champ se rejoignent dans la même entrée.
+On garde le `avant` de la **première** — la valeur du socle qu'on avait sous
+les yeux — et le `apres` de la **dernière**. Reprendre le `avant` d'une
+deuxième retouche reviendrait à comparer notre propre correction au socle,
+et le contrôle de conflit ne vérifierait plus rien.
+
+**Ce qui n'a pas changé, et ne doit pas :** `avant` reste, par champ, et le
+fichier reste une liste de changements — jamais une copie d'entité. Une
+copie est une copie d'une base qui bouge toutes les nuits : chacun de ses
+champs non modifiés affirme « cette valeur est juste » sans que personne
+l'ait dit, et reposerait une vieille valeur par-dessus une correction de la
+fabrique.
+
+**La version 1 reste lue**, par la page comme par le script de fusion. Un
+fichier déjà enregistré porte du travail réel.
+
+**Un piège du groupement, trouvé en mesurant :** faire porter le verdict par
+l'opération rejetait trois corrections justes parce que la quatrième
+s'appuyait sur une valeur périmée. Le verdict est par champ ; le rapport
+nomme chaque champ en conflit, et `--ecrire` ne retient que les champs
+acceptables.
+
+**Mesuré :** un fichier version 1 et un fichier version 2 portant les mêmes
+corrections, rejoués contre le même socle, donnent le même verdict — 1
+accepté, 1 conflit nommant `fin`. Sept tests neufs sur la version 2, plus
+l'essai en navigateur, qui a montré un second défaut : le compteur de
+modifications non enregistrées comptait les gestes et annonçait « 3
+modifications » pour un seul champ changé.
+
 ## 11. Ce qu'il faut préserver pour un portage Flutter
 
 - **`socle/requetes/` et `js/model.js` sont le cœur transférable.** Les requêtes

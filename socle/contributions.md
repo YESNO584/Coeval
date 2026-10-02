@@ -15,27 +15,63 @@ milliers de lignes pour retrouver les trois qu'il a touchées.
 Le fichier est donc **une liste d'opérations**, dans l'ordre où elles ont été
 faites.
 
+**Et pas une copie de l'entité modifiée**, même réduite à l'entité touchée.
+La raison tient en un exemple. Vous corrigez le nom de Laplace et enregistrez
+l'entité entière. La nuit suivante, la fabrique corrige sa date de mort —
+Wikidata en porte deux, à un jour près, et l'arbitrage a changé. Votre fichier
+arrive une semaine plus tard : il contient votre nom corrigé **et l'ancienne
+date de mort**, celle que vous aviez sous les yeux.
+
+Rien, dans ce fichier, ne dit que vous vouliez changer l'un et pas l'autre.
+Dans une copie d'entité, **chaque champ non modifié devient une affirmation
+implicite « cette valeur est juste »** — que personne n'a prononcée. Avec une
+liste de changements, un champ absent ne dit rien, et c'est exactement ce
+qu'il faut.
+
 ## La forme
 
 ```json
 {
   "format": "coeval-contributions",
-  "version": 1,
+  "version": 2,
   "editeur": "Coeval 0.1",
-  "socle": { "fabriqueLe": "2026-09-19" },
+  "socle": { "fabriqueLe": "2026-09-20" },
   "operations": [
     {
       "numero": 1,
-      "faitLe": "2026-09-19T05:12:33.000Z",
+      "faitLe": "2026-10-02T05:12:33.000Z",
       "operation": "modification",
       "cible": { "type": "personne", "id": "Q9312" },
-      "champ": "nom",
-      "avant": "Emmanuel Kant",
-      "apres": "Immanuel Kant",
+      "champs": {
+        "nom": { "avant": "Emmanuel Kant", "apres": "Immanuel Kant" },
+        "debut": { "avant": "1724", "apres": "1725" }
+      },
       "pourquoi": "graphie allemande, celle de sa signature"
     }
   ]
 }
+```
+
+### Une opération par entité, pas une par champ
+
+Corriger quatre champs d'une personne donne **une** opération qui liste les
+quatre, et non quatre opérations qui répètent la même cible.
+
+Les retouches successives d'un même champ se rejoignent dans la même entrée :
+on garde le `avant` de la **première** — la valeur du socle qu'on avait sous
+les yeux — et le `apres` de la **dernière**. Reprendre le `avant` d'une
+deuxième retouche reviendrait à comparer notre propre correction au socle, et
+le contrôle de conflit ne vérifierait plus rien.
+
+### La version 1 reste lisible
+
+Elle écrivait une opération par champ, avec `champ`, `avant` et `apres` à la
+racine. Le script de fusion et la page lisent les deux formes : un fichier
+enregistré avant le 2026-10-02 porte du travail que personne ne refera.
+
+```json
+{ "operation": "modification", "cible": { "type": "personne", "id": "Q9312" },
+  "champ": "nom", "avant": "Emmanuel Kant", "apres": "Immanuel Kant" }
 ```
 
 ### Les champs de l'en-tête
@@ -48,11 +84,11 @@ faites.
 
 ### Les trois opérations
 
-| `operation` | Ce qu'elle dit | `avant` | `apres` |
-|---|---|---|---|
-| `modification` | Ce champ doit changer | la valeur vue | la valeur proposée |
-| `ajout` | Cette entrée n'existe pas | absent | la valeur posée |
-| `suppression` | Cette entrée ne devrait pas être là | l'entrée entière | absent |
+| `operation` | Ce qu'elle dit | Ce qu'elle porte |
+|---|---|---|
+| `modification` | Ces champs doivent changer | `champs`, chacun avec `avant` (la valeur vue) et `apres` (la valeur proposée) |
+| `ajout` | Cette entrée n'existe pas | `champs`, chacun avec `apres` seulement — il n'y a pas de valeur antérieure |
+| `suppression` | Cette entrée ne devrait pas être là | `avant` à la racine : le nom de l'entrée. Pas de `champs` : c'est l'entrée entière qui est en cause |
 
 ### `avant` est le champ qui fait tout
 
@@ -73,15 +109,17 @@ Un contributeur ne peut pas inventer un identifiant Wikidata. Il utilise un
   "numero": 4,
   "operation": "ajout",
   "cible": { "type": "personne", "id": "tmp-1" },
-  "champ": "nom",
-  "apres": "Jeanne Dupont",
+  "champs": {
+    "nom": { "apres": "Jeanne Dupont" },
+    "debut": { "apres": "1881" }
+  },
   "pourquoi": "aïeule, absente de Wikidata"
 }
 ```
 
-Plusieurs opérations `ajout` partagent le même `tmp-1` pour remplir les
-différents champs d'une même entrée nouvelle. **Le script de fusion remplace
-`tmp-1` par un identifiant définitif** au moment de l'intégration.
+Tous les champs d'une entrée nouvelle tiennent dans la même opération.
+**Le script de fusion remplace `tmp-1` par un identifiant définitif** au
+moment de l'intégration.
 
 ### Les champs modifiables
 
@@ -108,9 +146,12 @@ Il refuse une opération quand :
 - l'identifiant visé n'existe pas dans le socle (sauf `tmp-`) ;
 - une année sort des bornes, ou n'est pas un nombre entier ;
 - un texte dépasse une longueur raisonnable, ou contient des balises ;
-- une `modification` n'a pas de `avant` ;
+- une `modification` n'a pas de `avant` sur l'un de ses champs ;
+- l'opération ne porte aucun champ : elle ne dit rien ;
 - la valeur `avant` ne correspond plus à ce que le socle contient — c'est un
-  **conflit**, signalé comme tel et non écarté en silence.
+  **conflit**, signalé comme tel et non écarté en silence. Le conflit nomme
+  **chaque** champ dépassé : une opération peut en corriger quatre dont un
+  seul est périmé.
 
 **Le fichier vient de l'extérieur : il ne se croit jamais sur parole.** Le
 socle alimente un site public ; une contribution mal intentionnée pourrait y

@@ -77,7 +77,7 @@ export const MAX_TRANCHES = 8;
 // sur une vieille version de l'éditeur et enverrait un jour un fichier que le
 // script de fusion ne saurait plus lire — sans que personne comprenne
 // pourquoi. Le contrat est décrit dans socle/contributions.md.
-export const VERSION_CONTRIBUTIONS = 1;
+export const VERSION_CONTRIBUTIONS = 2;
 
 // --- Saisie ---
 

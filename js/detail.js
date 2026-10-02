@@ -111,8 +111,8 @@ export function remplir(racine, entree, origine, surChangement, surSuppression) 
   const supprimer = creer("button", "bouton-danger", "Supprimer cette entrée");
   supprimer.type = "button";
   supprimer.addEventListener("click", () => {
-    contributions.noter("suppression", { type: entree.type, id: entree.id },
-      null, entree.nom, undefined);
+    contributions.noterSuppression({ type: entree.type, id: entree.id },
+      entree.nom);
     surChangement();
     surSuppression();
   });

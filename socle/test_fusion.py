@@ -28,10 +28,12 @@ SOCLE = {
 def examiner(operation):
     """Renvoie ('accepte', None), ('conflit', raison) ou ('refus', raison)."""
     try:
-        conflit = fusionner.verifier_operation(operation, SOCLE)
+        conflits = fusionner.verifier_operation(operation, SOCLE)
     except fusionner.Refus as souci:
         return ("refus", str(souci))
-    return ("conflit", conflit) if conflit else ("accepte", None)
+    if not conflits:
+        return ("accepte", None)
+    return ("conflit", " ; ".join(f"{c} : {r}" for c, r in conflits.items()))
 
 
 def modification(champ, avant, apres, cible="Q9312"):
@@ -127,6 +129,71 @@ def test_un_fichier_d_une_version_trop_recente_est_refuse():
         _, refusees, _ = fusionner.examiner([str(chemin)], SOCLE)
         verifier(len(refusees) == 1, "une version inconnue doit être refusée")
         verifier("version" in refusees[0][2], "la raison doit nommer la version")
+
+
+# --- La version 2 : une opération par entité ---
+#
+# Elle existe parce qu'une opération par champ répétait la cible à chaque
+# ligne. Le principe ne change pas : seuls les champs touchés, chacun avec
+# la valeur vue. Ce qui change est la forme, et les deux doivent se lire —
+# un fichier enregistré avant le changement porte du travail réel.
+
+def groupee(champs, cible="Q9312", operation="modification"):
+    return {"numero": 1, "operation": operation,
+            "cible": {"type": "personne", "id": cible}, "champs": champs}
+
+
+def test_une_operation_groupee_passe():
+    etat, _ = examiner(groupee({
+        "nom": {"avant": "Emmanuel Kant", "apres": "Immanuel Kant"},
+        "debut": {"avant": "1724", "apres": "1725"},
+    }))
+    verifier(etat == "accepte", f"attendu accepté, obtenu {etat}")
+
+
+def test_un_seul_champ_perime_suffit_a_faire_un_conflit():
+    """Trois champs justes et un dépassé : c'est un conflit, et il nomme
+    lequel. S'arrêter au premier champ examiné cacherait les autres."""
+    etat, raison = examiner(groupee({
+        "nom": {"avant": "Emmanuel Kant", "apres": "Immanuel Kant"},
+        "fin": {"avant": "1800", "apres": "1805"},
+    }))
+    verifier(etat == "conflit", f"attendu conflit, obtenu {etat}")
+    verifier(raison is not None and "fin" in raison,
+             f"le conflit doit nommer le champ en cause : {raison}")
+    verifier(raison is not None and "nom" not in raison,
+             f"il ne doit pas accuser un champ à jour : {raison}")
+
+
+def test_les_deux_versions_se_lisent_pareil():
+    une = fusionner.champs_de(modification("nom", "Emmanuel Kant", "Immanuel Kant"))
+    deux = fusionner.champs_de(groupee({
+        "nom": {"avant": "Emmanuel Kant", "apres": "Immanuel Kant"}}))
+    verifier(une == deux, f"version 1 et version 2 doivent donner la même "
+                          f"chose : {une} contre {deux}")
+
+
+def test_une_operation_sans_aucun_champ_est_refusee():
+    etat, raison = examiner(groupee({}))
+    verifier(etat == "refus", f"attendu refus, obtenu {etat}")
+    verifier(raison is not None and "ne dit rien" in raison, f"raison : {raison}")
+
+
+def test_un_champ_inconnu_est_refuse_aussi_en_version_2():
+    etat, _ = examiner(groupee({"notoriete": {"avant": "1", "apres": "999"}}))
+    verifier(etat == "refus", f"attendu refus, obtenu {etat}")
+
+
+def test_les_chevrons_sont_refuses_aussi_en_version_2():
+    etat, _ = examiner(groupee({
+        "nom": {"avant": "Emmanuel Kant", "apres": "<script>alert(1)</script>"}}))
+    verifier(etat == "refus", f"attendu refus, obtenu {etat}")
+
+
+def test_une_creation_groupee_passe():
+    etat, _ = examiner(groupee({"nom": {"apres": "Une personne"}},
+                               cible="tmp-1", operation="ajout"))
+    verifier(etat == "accepte", f"attendu accepté, obtenu {etat}")
 
 
 def main():

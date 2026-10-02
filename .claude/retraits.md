@@ -237,6 +237,45 @@ et le réglage vont ensemble.
 
 ---
 
+### Une opération par champ, dans le fichier de contributions
+*2026-10-02 · `socle/contributions.md` (version 2), `js/contributions.js`,
+`js/base.js`, `socle/fusionner.py`*
+
+Les clés `champ`, `avant` et `apres` à la racine d'une opération sont
+remplacées par un dictionnaire `champs`, qui groupe tous les champs touchés
+d'une même entité.
+
+**Pourquoi :** corriger quatre champs d'une personne produisait quatre
+lignes répétant la même cible. Même information, fichier deux fois plus
+long, et illisible à l'œil.
+
+**La version 1 reste lue**, par la page comme par le script de fusion
+(`champsDe` en JavaScript, `champs_de` en Python). Un fichier enregistré
+avant ce changement porte du travail que personne ne refera. Ne pas retirer
+ces deux fonctions tant que des fichiers version 1 peuvent circuler.
+
+**Ce qui n'a pas changé, et ne doit pas :** `avant` reste, par champ. C'est
+le seul moyen de savoir si une correction vise une valeur toujours
+d'actualité ou une valeur qu'une nuit de fabrique a déjà remplacée.
+
+**Un piège du groupement, évité :** faire porter le verdict par l'opération
+rejetait trois corrections justes parce que la quatrième était périmée. Le
+verdict est donc par champ, et le script n'écrit que les champs acceptables.
+
+### Le compteur de modifications par geste
+*2026-10-02 · `js/contributions.js`, `nombre()`*
+
+Le compteur `depuisEnregistrement`, incrémenté à chaque appel, est remplacé
+par une comparaison entre le registre et son état au dernier
+enregistrement.
+
+**Pourquoi :** il comptait les gestes, pas ce qui restait à écrire. Le
+bandeau annonçait « 3 modifications non enregistrées » pour un seul champ
+changé trois fois, et continuait à compter un champ reposé à sa valeur
+d'origine. Mesuré dans le navigateur, pas trouvé à la lecture.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un
