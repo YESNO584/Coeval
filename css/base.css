@@ -135,3 +135,73 @@ footer {
 footer a {
   color: var(--accent);
 }
+
+/* L'en-tête porte, à droite, le fichier de travail en cours. Il est
+   visible en permanence : ce que la frise montre est « socle + fichier »,
+   et on doit pouvoir lire d'un coup d'œil lequel. */
+.entete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.fichier-travail {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  color: var(--gris);
+  font: inherit;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fichier-travail[data-actif="oui"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fichier-travail:hover,
+.fichier-travail:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* La fenêtre qui pose une question et attend la réponse. */
+.dialogue {
+  max-width: min(32rem, calc(100vw - 2rem));
+  padding: 1.2rem;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--carte);
+  color: var(--texte);
+}
+
+.dialogue::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.titre-dialogue {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.texte-dialogue {
+  margin: 0 0 0.6rem;
+  color: var(--gris);
+  font-size: 0.9rem;
+}
+
+.boutons-dialogue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

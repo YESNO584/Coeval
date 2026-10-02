@@ -790,6 +790,54 @@ console.
 `display: none` de faible priorité. Le panneau s'affichait, et la frise
 restait dessous. Invisible à la lecture du code.
 
+### L9 — Le fichier devient la base de travail ✅ fait le 2026-10-02
+
+Le lot L8 n'écrivait que dans un sens. Le fichier n'était jamais relu, et le
+registre était vidé après chaque enregistrement : **le deuxième
+enregistrement dans le même fichier effaçait le premier.** Le « fichier
+cumulatif » ne cumulait rien. Trouvé par une question de l'utilisateur, pas
+par la vérification du L8 — qui enregistrait une seule fois, et ne pouvait
+donc pas le voir.
+
+Ce que la page fait maintenant :
+
+- **à l'ouverture, si un fichier a déjà servi**, une fenêtre propose de le
+  reprendre, en le nommant, ou de repartir de zéro. Le repère est gardé dans
+  IndexedDB — `localStorage` ne stocke que du texte et ne peut pas garder un
+  repère de fichier ;
+- **« Reprendre »** lit le fichier, en fait la base de travail, et la frise
+  affiche désormais **socle + fichier** : corrections visibles, créations
+  présentes, suppressions masquées (`js/base.js`) ;
+- **« Repartir de zéro »** laisse le fichier intact sur le disque ; un
+  nouveau est demandé à la première modification, et devient la référence ;
+- **le fichier en cours est affiché en haut à droite**, en permanence, et un
+  clic permet d'en changer. Avec du travail non enregistré, le changement
+  demande confirmation ;
+- **en cas de désaccord** — une nuit de fabrique a changé une entrée que vous
+  aviez corrigée — votre version s'affiche et l'écart est signalé dans
+  l'encart. La page ne tranche pas, comme le script de fusion.
+
+Deux limites du navigateur, écrites plutôt que contournées : il ne donne
+jamais le **chemin** d'un fichier, seulement son nom ; et il redemande
+l'autorisation d'accès à chaque réouverture, à la suite d'un clic seulement —
+le clic sur « Reprendre » est ce geste.
+
+**Mesuré de bout en bout dans Chromium** (`essais/lancer.sh`), sur la
+séquence qui manquait : modifier → enregistrer → **recharger la page** →
+reprendre → la correction est sur la frise → modifier → enregistrer → le
+fichier contient **les deux** séries. Plus la confirmation au changement de
+fichier, et « repartir de zéro » qui laisse le fichier intact. Aucune erreur
+en console.
+
+**Un second défaut trouvé par cet essai, invisible à la lecture :** le bouton
+« Enregistrer » ne répondait qu'au deuxième clic. Cliquer dessus après avoir
+tapé dans un champ fait d'abord quitter ce champ, ce qui compte une
+modification, ce qui reconstruisait le bandeau — le bouton disparaissait
+entre l'appui et le relâchement.
+
+**L'essai est au dépôt** (`essais/`), avec le tableau de ce que chaque
+vérification a trouvé. C'est la seule forme qui attrape ces deux défauts.
+
 ## 11. Ce qu'il faut préserver pour un portage Flutter
 
 - **`socle/requetes/` et `js/model.js` sont le cœur transférable.** Les requêtes

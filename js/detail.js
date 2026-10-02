@@ -6,6 +6,7 @@
 // clic à côté ne le ferait pas respecter.
 
 import * as contributions from "./contributions.js";
+import { lireChamp as lire } from "./base.js";
 import { creer } from "./html.js";
 
 // Ce qui se modifie, et comment. « notoriete » et « sourceUrl » n'y sont
@@ -18,16 +19,6 @@ const CHAMPS = [
   { cle: "pays", etiquette: "Pays", forme: "liste" },
   { cle: "description", etiquette: "Description", forme: "long" },
 ];
-
-function lire(entree, cle) {
-  if (cle === "debut" || cle === "fin") {
-    return String(entree[cle].annee);
-  }
-  if (cle === "pays") {
-    return entree.pays.join(", ");
-  }
-  return entree[cle] === undefined ? "" : String(entree[cle]);
-}
 
 function ligneLecture(etiquette, valeur) {
   const ligne = creer("div", "ligne-detail");

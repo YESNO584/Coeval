@@ -158,6 +158,52 @@ page sans vérifier ses données. Il n'y en a pas tant que le mode direct est
 
 ---
 
+### Le vidage du registre après chaque enregistrement
+*2026-10-02 · `js/edition.js`, `js/contributions.js`*
+
+`contributions.vider()` n'est plus appelé après un enregistrement, et la
+fonction elle-même devient `abandonner()`, qui ne retire que ce qui n'est
+pas enregistré.
+
+**Pourquoi :** c'est ce geste qui empêchait le fichier de cumuler. Le
+registre **est** le contenu du fichier ; le vider faisait que
+l'enregistrement suivant n'écrivait que les opérations postérieures, et
+effaçait les précédentes. Le « fichier cumulatif » demandé au lot L6 ne
+cumulait rien.
+
+**Avant de le remettre :** il faudrait que le fichier ne soit plus réécrit
+entier. Tant qu'il l'est, vider le registre perd des données.
+
+### La reconstruction du bandeau à chaque modification
+*2026-10-02 · `js/vues.js`, `barrerLeRetour`*
+
+Le `zone.replaceChildren()` en tête de fonction est retiré : quand le
+bandeau est déjà là, seul son texte change et les boutons restent les mêmes
+objets.
+
+**Pourquoi :** le bouton « Enregistrer » ne répondait qu'au deuxième clic.
+Cliquer dessus après avoir tapé dans un champ fait d'abord quitter ce champ,
+ce qui compte une modification, ce qui reconstruisait le bandeau — le bouton
+disparaissait entre l'appui et le relâchement, et le clic n'arrivait nulle
+part. Invisible à la lecture du code ; trouvé par l'essai en navigateur.
+
+**Avant de le remettre :** il faudrait que le bandeau n'ait pas de bouton,
+ou que son contenu change vraiment selon l'état. Ce n'est pas le cas :
+seul le compte varie.
+
+### La double définition de la lecture d'un champ
+*2026-10-02 · `js/detail.js`*
+
+La fonction `lire(entree, cle)` est retirée de `detail.js` ; elle vient
+maintenant de `js/base.js`, où elle fait paire avec son inverse.
+
+**Pourquoi :** lire un champ en texte et le réécrire depuis un texte sont
+une seule règle vue des deux côtés. Séparées, elles auraient fini par ne
+plus s'accorder — et un désaccord entre les deux se traduit par une
+correction qui ne s'applique pas, ou qui s'applique de travers.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un

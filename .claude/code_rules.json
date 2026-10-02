@@ -15,7 +15,8 @@
       ".git",
       "node_modules",
       "data",
-      "public"
+      "public",
+      "essais"
     ],
     "vendor_detection": {
       "_note": "Code tiers vivant dans l'arbre. Il ne doit jamais être analysé : le mélanger produit des violations fausses. Coeval n'a aucune dépendance téléchargée — cette liste doit rester vide. Si elle se remplit un jour, l'inscrire aussi dans CLAUDE.md § « External / vendored code ».",
@@ -33,9 +34,11 @@
         "data",
         "public",
         "docs",
-        ".git"
+        ".git",
+        "essais"
       ]
-    }
+    },
+    "_exclusions_note": "« essais » est le banc d'essai en navigateur : il écrit dans la console, c'est son travail, et la règle no-console-log y produirait un faux positif permanent. Il n'est pas livré avec la page."
   },
   "rules": [
     {

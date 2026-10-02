@@ -30,6 +30,8 @@ import { interroger } from "./sparql.js";
 import { convertirPersonnes, ajouterNotoriete, ajouterPays } from "./model.js";
 import { convertirSouverains, convertirEvenements } from "./entrees.js";
 import * as socle from "./socle.js";
+import * as contributions from "./contributions.js";
+import { appliquer } from "./base.js";
 
 const TAILLE_LOT = 300;
 
@@ -130,6 +132,20 @@ async function attacherPays(entrees) {
   }
 }
 
+// Le dernier geste de tout chargement : poser le fichier de contributions
+// par-dessus le socle. Ce que la page montre est toujours « socle + fichier »,
+// jamais le socle seul — sinon on ne verrait jamais son propre travail.
+function terminer(entrees, ecartees, origines, nonCouvertes) {
+  const fusionnees = appliquer(entrees, contributions.liste());
+  return {
+    entrees: fusionnees.entrees,
+    desaccords: fusionnees.desaccords,
+    ecartees,
+    origines,
+    nonCouvertes,
+  };
+}
+
 // Charge tout ce que demandent les filtres. 'annoncer' sert à dire où on en
 // est : une attente de plusieurs secondes sans un mot ressemble à une panne.
 //
@@ -166,7 +182,7 @@ export async function chargerTout(valeurs, annoncer) {
   }
 
   if (entrees.length === 0) {
-    return { entrees, ecartees, origines, nonCouvertes };
+    return terminer(entrees, ecartees, origines, nonCouvertes);
   }
 
   // Le socle porte déjà notoriété et pays : on ne redemande que pour ce qui
@@ -181,5 +197,5 @@ export async function chargerTout(valeurs, annoncer) {
     await attacherPays(aCompleter);
   }
 
-  return { entrees, ecartees, origines, nonCouvertes };
+  return terminer(entrees, ecartees, origines, nonCouvertes);
 }

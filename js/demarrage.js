@@ -16,6 +16,10 @@ export function demarrer(contexte) {
     frise: document.querySelector(".zone-frise"),
   }, {
     annoncer: contexte.annoncer,
+    // Après un enregistrement, le repère affiché et la frise doivent suivre :
+    // ce qui est à l'écran est « socle + fichier », et le fichier vient de
+    // changer.
+    surFichier: contexte.surChangementDeBase,
     // Refermer le détail rend la frise entière : plus de sélection, plus
     // d'estompage. Sans cela on reviendrait sur une frise à moitié éteinte
     // sans comprendre pourquoi.

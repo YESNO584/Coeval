@@ -5,6 +5,7 @@
 // la règle du retour barré dans js/vues.js.
 
 import * as contributions from "./contributions.js";
+import * as fichierDeTravail from "./fichier.js";
 import * as detail from "./detail.js";
 import * as vues from "./vues.js";
 
@@ -30,20 +31,24 @@ function surChangement() {
 }
 
 async function enregistrerPuisRevenir(ailleurs) {
-  const nom = await contributions.enregistrer(ailleurs === true);
+  const nom = await fichierDeTravail.enregistrer(ailleurs === true);
   if (nom === null) {
     // L'utilisateur a renoncé au moment de choisir où : on ne revient pas,
     // et surtout on ne perd rien.
     rappels.annoncer("Enregistrement abandonné. Vos modifications sont intactes.", true);
     return;
   }
-  contributions.vider();
+  // Rien n'est vidé : le registre garde ce qui vient d'être écrit, parce
+  // qu'il EST le contenu du fichier. Le vider ferait que le prochain
+  // enregistrement n'écrirait que les opérations suivantes, et effacerait
+  // celles-ci. C'est exactement le défaut corrigé le 2026-10-02.
   rappels.annoncer(`Modifications enregistrées dans ${nom}.`);
+  rappels.surFichier();
   fermer();
 }
 
 function abandonner() {
-  contributions.vider();
+  contributions.abandonner();
   rappels.annoncer("Modifications abandonnées.");
   fermer();
 }

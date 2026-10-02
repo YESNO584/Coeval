@@ -1,25 +1,31 @@
-// Le registre des modifications en cours, et son enregistrement en fichier.
+// Le registre des modifications en cours.
 //
-// Rien n'est envoyé nulle part : tout reste chez le visiteur. Le fichier
-// produit suit le contrat de socle/contributions.md, qui est le seul point
-// de rencontre entre cette page et le script de fusion.
+// Il porte **tout** le contenu du fichier de travail : ce qui en a été relu
+// au démarrage, et ce qui a été fait depuis. Jusqu'au 2026-10-02 il était
+// vidé après chaque enregistrement, et le deuxième enregistrement dans le
+// même fichier effaçait le premier — le « fichier cumulatif » ne cumulait
+// rien. La vérification d'alors ne pouvait pas le voir : elle enregistrait
+// une seule fois.
 //
-// Deux chemins d'enregistrement, selon ce que le navigateur permet :
-//   - Chrome et Edge savent réécrire le même fichier, une fois qu'on l'a
-//     désigné. Le repère vers ce fichier survit à la fermeture de la page ;
-//   - Firefox et Safari ne le savent pas. Chaque enregistrement y est un
-//     téléchargement de plus, et le script de fusion sait en avaler
-//     plusieurs.
-// Vérifié le 2026-09-18 dans les données de compatibilité de MDN.
+// L'écriture et la lecture du fichier sont dans js/fichier.js. Ce fichier-ci
+// ne connaît que la liste d'opérations et le contrat de
+// socle/contributions.md.
 
 import { VERSION_CONTRIBUTIONS, MOTIF_ANNEE } from "./config.js";
 import * as socle from "./socle.js";
 
 const operations = [];
+// Combien d'opérations sont déjà dans le fichier. Tout ce qui est au-delà
+// n'est pas enregistré — c'est cela que compte le bandeau de retour.
+let enregistrees = 0;
 let fichier = null;
 let creations = 0;
 
 export function nombre() {
+  return operations.length - enregistrees;
+}
+
+export function total() {
   return operations.length;
 }
 
@@ -27,19 +33,18 @@ export function liste() {
   return operations;
 }
 
-export function vider() {
-  operations.length = 0;
+// Abandonne ce qui n'est pas enregistré, et garde ce qui l'est : le fichier
+// reste la base de travail même quand on renonce aux dernières corrections.
+export function abandonner() {
+  operations.length = enregistrees;
   creations = 0;
 }
 
 export function identifiantProvisoire() {
   creations += 1;
-  return `tmp-${creations}`;
+  return `tmp-${Date.now()}-${creations}`;
 }
 
-// Enregistre une opération. 'avant' est obligatoire sur une modification :
-// c'est lui qui permettra de détecter qu'une nuit de fabrique a changé la
-// valeur entre-temps.
 export function noter(operation, cible, champ, avant, apres, pourquoi) {
   operations.push({
     numero: operations.length + 1,
@@ -54,10 +59,11 @@ export function noter(operation, cible, champ, avant, apres, pourquoi) {
 }
 
 // Retire la dernière opération portant sur ce champ de cette entrée, s'il y
-// en a une. Sert quand on repose la valeur d'origine : inscrire un
-// changement nul ferait travailler le script pour rien.
+// en a une **et qu'elle n'est pas déjà enregistrée**. Sert quand on repose la
+// valeur d'origine. Une opération déjà écrite dans le fichier ne se retire
+// pas en silence : elle serait perdue pour le script de fusion.
 export function oublier(idCible, champ) {
-  for (let i = operations.length - 1; i >= 0; i -= 1) {
+  for (let i = operations.length - 1; i >= enregistrees; i -= 1) {
     if (operations[i].cible.id === idCible && operations[i].champ === champ) {
       operations.splice(i, 1);
       return true;
@@ -73,7 +79,7 @@ export function contenu() {
     version: VERSION_CONTRIBUTIONS,
     editeur: "Coeval 0.1",
     socle: { fabriqueLe: informations === null ? null : informations.fabriqueLe },
-    operations,
+    operations: operations.map((operation, rang) => ({ ...operation, numero: rang + 1 })),
   };
 }
 
@@ -81,56 +87,24 @@ export function estUneAnnee(texte) {
   return MOTIF_ANNEE.test(String(texte).trim());
 }
 
-function nomParDefaut() {
-  const jour = new Date().toISOString().slice(0, 10);
-  return `coeval-contributions-${jour}.json`;
+
+// Remplace tout le registre par ce qu'un fichier contenait. Tout est alors
+// « enregistré » : c'est l'état du fichier sur le disque.
+export function remplacerPar(lues) {
+  operations.length = 0;
+  operations.push(...lues);
+  enregistrees = operations.length;
+  creations = 0;
 }
 
-// Le navigateur sait-il réécrire un fichier désigné ?
-export function reecritureDisponible() {
-  return typeof window.showSaveFilePicker === "function";
+// Tout ce qui est en mémoire est maintenant dans le fichier.
+export function marquerEnregistre() {
+  enregistrees = operations.length;
 }
 
-async function ecrireDansLeFichier(texte) {
-  const flux = await fichier.createWritable();
-  await flux.write(texte);
-  await flux.close();
-}
-
-function telecharger(texte) {
-  const lien = document.createElement("a");
-  const adresse = URL.createObjectURL(new Blob([texte], { type: "application/json" }));
-  lien.href = adresse;
-  lien.download = nomParDefaut();
-  lien.click();
-  URL.revokeObjectURL(adresse);
-}
-
-// Enregistre. Renvoie le nom du fichier écrit, ou null si l'utilisateur a
-// renoncé au moment de choisir où.
-export async function enregistrer(redemander) {
-  const texte = JSON.stringify(contenu(), null, 1);
-  if (!reecritureDisponible()) {
-    telecharger(texte);
-    return nomParDefaut();
-  }
-  if (fichier === null || redemander === true) {
-    try {
-      fichier = await window.showSaveFilePicker({
-        suggestedName: nomParDefaut(),
-        types: [{
-          description: "Contributions Coeval",
-          accept: { "application/json": [".json"] },
-        }],
-      });
-    } catch (erreur) {
-      return null;
-    }
-  }
-  await ecrireDansLeFichier(texte);
-  return fichier.name;
-}
-
-export function fichierChoisi() {
-  return fichier === null ? null : fichier.name;
+// Oublie tout, y compris ce qui était enregistré : « repartir de zéro ».
+export function toutOublier() {
+  operations.length = 0;
+  enregistrees = 0;
+  creations = 0;
 }

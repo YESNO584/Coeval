@@ -6,11 +6,12 @@ import { installer } from "./filters.js";
 import { chargerTout } from "./chargement.js";
 import { trierParNotoriete, bornes, appliquerQuota } from "./model.js";
 import { grouper } from "./groupes.js";
-import * as socle from "./socle.js";
 import { creer } from "./html.js";
 import * as edition from "./edition.js";
 import { demarrer } from "./demarrage.js";
-import { decrireSiecle, accueillir, expliquerLeVide } from "./accueil.js";
+import * as travail from "./travail.js";
+import { accueillir, expliquerLeVide } from "./accueil.js";
+import { resumerLAffichage } from "./densite.js";
 import {
   dessiner,
   dessinerColonne,
@@ -32,6 +33,7 @@ const etat = {
   ecartees: {},
   origines: { socle: 0, direct: 0 },
   nonCouvertes: [],
+  desaccords: [],
   affichees: [],
   min: 0,
   max: 0,
@@ -121,38 +123,10 @@ function affiner() {
   filtres.majChoix(etat.chargees);
   const mesures = redessiner(bandes);
 
-  const details = [`${etat.affichees.length} entrées`, `${mesures.bandes.length} bandes`];
-  if (horsQuota > 0) {
-    details.push(`${horsQuota} au-delà du quota de ${plafond} par catégorie`);
-  }
-  if (regroupees > 0) {
-    details.push(`${regroupees} réunies sous « autres »`);
-  }
-  if (indeterminees > 0) {
-    details.push(`${indeterminees} sans valeur connue`);
-  }
-  for (const [cle, mot] of Object.entries({
-    sansDate: "sans date précise", sansNom: "sans nom",
-    doublons: "dates concurrentes arbitrées", sansFin: "sans date de fin"
-  })) {
-    if (etat.ecartees[cle] > 0) {
-      details.push(`${etat.ecartees[cle]} ${mot}`);
-    }
-  }
-  // D'où viennent les données, et de quand elles datent. Une frise qui ne
-  // dit pas si elle montre un socle d'avant-hier ou une réponse de Wikidata
-  // à l'instant laisse croire à une fraîcheur qu'elle n'a pas.
-  const informations = socle.informations();
-  if (etat.origines.socle > 0 && informations !== null) {
-    details.push(`${etat.origines.socle} du socle du ${informations.fabriqueLe}`);
-  }
-  if (etat.origines.direct > 0) {
-    details.push(`${etat.origines.direct} demandées à Wikidata à l'instant`);
-  }
-  if (etat.nonCouvertes.length > 0) {
-    details.push(`${etat.nonCouvertes.join(", ")} absentes du socle`);
-  }
-  zoneDensite.textContent = details.join(" · ");
+  zoneDensite.textContent = resumerLAffichage(etat, {
+    horsQuota, plafond, regroupees, indeterminees,
+    bandes: mesures.bandes.length,
+  });
 
   if (centre !== undefined && centre !== null) {
     annoncer(`Ce qui recouvre ${centre.nom} (${centre.debut.annee}–${centre.fin.annee}).`);
@@ -174,12 +148,13 @@ async function recharger() {
   filtres.verrouiller(true);
   annoncer("Préparation des requêtes…");
   try {
-    const { entrees, ecartees, origines, nonCouvertes } =
+    const { entrees, ecartees, origines, nonCouvertes, desaccords } =
       await chargerTout(valeurs, annoncer);
     etat.chargees = entrees;
     etat.ecartees = ecartees;
     etat.origines = origines;
     etat.nonCouvertes = nonCouvertes;
+    etat.desaccords = desaccords;
     etat.selection = null;
     zoneChoix.replaceChildren();
     if (entrees.length === 0) {
@@ -239,7 +214,21 @@ demarrer({
   zoneChoix,
   etat,
   annoncer,
-  mettreEnEvidence
+  mettreEnEvidence,
+  surChangementDeBase
 });
 
-accueillir(annoncer, zoneDensite);
+// Changer de fichier, ou en reprendre un, change ce qui doit s'afficher :
+// la frise montre « socle + fichier ». On la refait si elle montrait déjà
+// quelque chose, sinon il n'y a rien à refaire.
+async function surChangementDeBase() {
+  travail.rafraichirLEtiquette();
+  if (etat.chargees.length > 0) {
+    await recharger();
+  }
+}
+
+travail.installer(document.querySelector("#fichier-travail"),
+  surChangementDeBase, annoncer);
+
+accueillir(annoncer, zoneDensite).then(() => travail.accueillirLeFichier());
