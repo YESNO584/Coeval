@@ -23,6 +23,41 @@ Loaded every session via the root `CLAUDE.md`.
      récente en haut. Ce qui suit n'appartient à aucun projet : ce sont des
      leçons sur l'outil lui-même, vraies partout, conservées telles quelles. -->
 
+## 2026-10-05 — Deux absences signalées : le siècle, et le métier
+
+- **Un socle publie des siècles qu'il n'a jamais fabriqués.** `-400.json` et
+  `-200.json` existent alors que seule la case `-300` a été interrogée : une
+  personne est écrite dans *tous* les fichiers que sa vie traverse
+  (`construire.py`, l. 261-266). La liste `index.siecles` ne dit donc pas ce
+  qui a été cherché — seul `index.densite`, et le contenu de `socle/cache/`,
+  le disent. *Ne jamais conclure « ce siècle est couvert » depuis la liste des
+  fichiers.*
+- **La précision « décennie » (code 8) écarte des gens très connus.**
+  Héraclite n'a qu'une date de mort, aux années -470 ; `modele.date` exige le
+  code 9 et la rejette. L'entrée part dans `sansDate` — le même compteur que
+  les inconnus sans date du tout. Les 200 écartées de l'index mélangent donc
+  deux cas très différents : « Wikidata ne sait pas » et « Wikidata sait à dix
+  ans près ».
+- **Une absence a presque toujours deux causes, pas une.** Héraclite est
+  bloqué par le siècle *et* par la précision ; Jésus par le siècle *et* par
+  l'absence de catégorie. S'arrêter à la première envoie faire un changement
+  qui ne montre toujours rien. *Réflexe : continuer la chaîne après avoir
+  trouvé le premier blocage.*
+- **Le choix des métiers décide qui existe, en silence.** Les catégories
+  interrogent `wdt:P106` en égalité stricte sur une liste fermée. Jésus porte
+  douze métiers, aucun dans la liste ; aucune ligne de journal ne le
+  signalera jamais, puisqu'il n'est même pas demandé. Un périmètre par
+  liste fermée est un choix éditorial qui ne laisse aucune trace mesurable.
+- **L'API de Wikidata (`api.php`) répond 429 quand SPARQL
+  (`query.wikidata.org`) répond encore.** Les deux limitations sont
+  indépendantes : un 429 sur l'une ne dit rien de l'autre. Pour vérifier
+  quelques entités, SPARQL est la voie qui passe.
+- **Agent créé :** `.claude/agents/missing-record-tracer.md`, générique —
+  « pourquoi cet enregistrement n'est-il pas dans le jeu de données ? »,
+  remonte la chaîne d'ingestion et nomme l'étage qui l'a écarté.
+
+---
+
 ## 2026-09-19 — Les libellés coûtaient le succès des requêtes
 
 - **Un motif qui gagne trois fois mérite d'être appliqué partout, tout de
