@@ -14,10 +14,12 @@ publier la page ne touche plus aux données, fabriquer les données ne touche
 plus à la page.
 
 Usage :
-  ./reprendre_en_ligne.py <adresse du site> <dossier de destination>
+  ./reprendre_en_ligne.py <adresse du site> <dossier>
+  ./reprendre_en_ligne.py <adresse du site> <dossier> --seulement-si-plus-grand
 """
 import json
 import pathlib
+import shutil
 import sys
 import urllib.error
 import urllib.request
@@ -30,8 +32,26 @@ def telecharger(adresse):
         return reponse.read()
 
 
-def reprendre(site, destination, minimum):
-    """Rend le nombre d'entrées reprises, ou lève une exception."""
+def lire_le_total(dossier):
+    """Combien d'entrées contient un socle déjà sur le disque. 0 s'il n'y en
+    a pas."""
+    index = pathlib.Path(dossier) / "index.json"
+    if not index.is_file():
+        return 0
+    try:
+        return int(json.loads(index.read_text(encoding="utf-8")).get("total", 0))
+    except (json.JSONDecodeError, OSError, TypeError, ValueError):
+        return 0
+
+
+def reprendre(site, destination, minimum, seulement_si_plus_grand=False):
+    """Rend (entrées, siècles) repris, ou lève une exception.
+
+    Le téléchargement se fait dans un dossier provisoire, mis en place d'un
+    seul coup à la fin. Écrire directement dans la destination publierait un
+    socle mutilé si le réseau coupait en cours de route : l'index
+    annoncerait douze siècles et trois fichiers seulement seraient là.
+    """
     racine = site.rstrip("/") + "/data"
     index = json.loads(telecharger(f"{racine}/index.json"))
     total = index.get("total", 0)
@@ -40,8 +60,21 @@ def reprendre(site, destination, minimum):
             f"le socle en ligne ne contient que {total} entrées "
             f"(minimum {minimum}) : il n'y a rien à reprendre")
 
-    destination.mkdir(parents=True, exist_ok=True)
-    (destination / "index.json").write_bytes(
+    if seulement_si_plus_grand:
+        # La fabrique repart de zéro quand ses règles changent. Sans cette
+        # comparaison, la première nuit après un correctif remplacerait un
+        # socle de 5 626 entrées par les 1 500 qu'elle a eu le temps de
+        # refaire, et le site perdrait des semaines de fabrique pour une
+        # correction de libellé.
+        dejaLa = lire_le_total(destination)
+        if dejaLa >= total:
+            return (dejaLa, None)
+
+    provisoire = pathlib.Path(str(destination) + ".en-cours")
+    if provisoire.is_dir():
+        shutil.rmtree(provisoire)
+    provisoire.mkdir(parents=True)
+    (provisoire / "index.json").write_bytes(
         json.dumps(index, ensure_ascii=False, indent=1).encode("utf-8"))
     for siecle in index.get("siecles", []):
         nom = siecle["fichier"]
@@ -50,22 +83,35 @@ def reprendre(site, destination, minimum):
         # chemin les yeux fermés.
         if "/" in nom or "\\" in nom or nom.startswith("."):
             raise ValueError(f"nom de fichier refusé : {nom!r}")
-        (destination / nom).write_bytes(telecharger(f"{racine}/{nom}"))
-    return total, len(index.get("siecles", []))
+        (provisoire / nom).write_bytes(telecharger(f"{racine}/{nom}"))
+
+    destination = pathlib.Path(destination)
+    if destination.is_dir():
+        shutil.rmtree(destination)
+    provisoire.rename(destination)
+    return (total, len(index.get("siecles", [])))
 
 
 def main():
-    if len(sys.argv) != 3:
+    arguments = [a for a in sys.argv[1:] if not a.startswith("--")]
+    options = {a for a in sys.argv[1:] if a.startswith("--")}
+    if len(arguments) != 2:
         print(__doc__, file=sys.stderr)
         return 2
-    site, destination = sys.argv[1], pathlib.Path(sys.argv[2])
+    site, destination = arguments[0], pathlib.Path(arguments[1])
     ici = pathlib.Path(__file__).resolve().parent
     config = json.loads((ici / "config.json").read_text(encoding="utf-8"))
     try:
-        total, siecles = reprendre(site, destination, config["minimum_publiable"])
-    except (urllib.error.URLError, ValueError, json.JSONDecodeError, KeyError) as souci:
+        total, siecles = reprendre(site, destination, config["minimum_publiable"],
+                                   "--seulement-si-plus-grand" in options)
+    except (urllib.error.URLError, ValueError, json.JSONDecodeError, KeyError,
+            OSError) as souci:
         print(f"socle en ligne non repris : {souci}", file=sys.stderr)
         return 1
+    if siecles is None:
+        print(f"socle fabriqué gardé : {total} entrées, au moins autant "
+              "que celui en ligne", file=sys.stderr)
+        return 0
     print(f"socle repris en ligne : {total} entrées, {siecles} siècles",
           file=sys.stderr)
     return 0

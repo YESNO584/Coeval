@@ -431,3 +431,21 @@ sans lui. Vérifié dans ce conteneur le 2026-09-13.
 - *À vérifier à chaque fois qu'un cache garde un échec :* la liste des
   fichiers qui l'invalident contient-elle tout ce qui peut transformer cet
   échec en succès ?
+
+---
+
+## Sortir une donnée d'une requête : chercher tous ses usages, pas le sien
+
+- Le 2026-09-19, le service de libellés est sorti des requêtes principales
+  pour qu'elles cessent d'échouer, et les noms ont été redemandés à part.
+  Les **noms des personnes**. Pas ceux des fonctions — que le même code
+  lisait, dans la même fonction, quinze lignes plus bas. Le métier de tous
+  les souverains a disparu du socle pendant deux semaines.
+- *Pourquoi ça n'a pas été vu :* un champ vide ne casse rien. La page
+  s'affiche, les tests passent, le compte d'entrées est bon. Seul un
+  comptage sur les données publiées l'a montré — 113 sur 113.
+- *La règle :* quand une donnée change de chemin, `grep` son nom dans tout
+  le projet avant de considérer le travail fini. Pas « où je l'utilise »,
+  mais « où elle est utilisée ».
+- *Et une vérification qui aurait suffi :* compter les champs vides par type
+  dans le socle publié. Un champ vide à 100 % est toujours un défaut.

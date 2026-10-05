@@ -142,8 +142,15 @@ def convertir_souverains(lignes, noms=None):
             retenues[cle]["debut"] = meilleure(retenues[cle]["debut"], debut)
             retenues[cle]["fin"] = meilleure(retenues[cle]["fin"], fin)
             continue
+        # Le libellé de la fonction — « empereur de Russie » — venait du
+        # service de libellés, sorti de la requête principale le 2026-09-19
+        # pour qu'elle passe. Les noms des personnes ont été redemandés à
+        # part, pas ceux des fonctions : le métier de tous les souverains a
+        # disparu du socle, 113 sur 113 au XIXe siècle, et personne ne l'a vu
+        # pendant deux semaines. « noms » porte les deux.
+        fonction_nommee = valeur(ligne, "fonctionLabel") or noms.get(fonction, "")
         entree = _nouvelle(sujet, cle, "souverain", nom, debut, fin, "souverains",
-                           valeur(ligne, "fonctionLabel") or "", False)
+                           fonction_nommee, False)
         entree["idFonction"] = fonction
         retenues[cle] = entree
     return list(retenues.values()), ecartees
@@ -193,5 +200,10 @@ def attacher(entrees, lignes, cle_entree, champ, transforme=None):
     for entree in entrees:
         trouves = par_sujet.get(entree.get(cle_entree))
         if trouves is not None:
-            entree[champ if transforme is None else transforme] = trouves
+            # Sans dédoublonnage, un souverain monté deux fois sur le même
+            # trône porte « Empire russe, Empire russe » : 76 sur 113 au
+            # XIXe siècle. L'ordre est conservé, il porte une information —
+            # le premier pays est le principal.
+            entree[champ if transforme is None else transforme] = list(
+                dict.fromkeys(trouves))
     return entrees

@@ -36,6 +36,20 @@ def verifier(site, minimum):
         return raisons
     if total < minimum:
         raisons.append(f"socle de {total} entrées, minimum {minimum}")
+
+    # L'index annonce ses siècles ; chacun doit avoir son fichier. Vérifier ce
+    # qu'un index déclare sans vérifier ce qui est là laisserait publier un
+    # socle mutilé par un téléchargement coupé en route — la page échouerait
+    # à ouvrir les siècles manquants, sans rien dire.
+    try:
+        annonces = json.loads(index.read_text(encoding="utf-8")).get("siecles", [])
+    except (json.JSONDecodeError, OSError):
+        return raisons
+    manquants = [s["fichier"] for s in annonces
+                 if not (site / "data" / s["fichier"]).is_file()]
+    if manquants:
+        raisons.append(f"{len(manquants)} siècle(s) annoncé(s) sans fichier : "
+                       + ", ".join(manquants[:5]))
     return raisons
 
 

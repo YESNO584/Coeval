@@ -276,6 +276,53 @@ d'origine. Mesuré dans le navigateur, pas trouvé à la lecture.
 
 ---
 
+### Le métier des souverains, perdu sans que personne le voie
+*2026-10-05 · `socle/modele.py` — remise, pas un retrait*
+
+Le champ `detail` d'un souverain devait porter « empereur de Russie ». Il
+était vide sur **113 souverains sur 113** au XIXe siècle, et partout
+ailleurs.
+
+**Ce qui s'était passé :** le 2026-09-19, `SERVICE wikibase:label` est sorti
+des requêtes principales pour qu'elles cessent d'échouer. Les noms des
+personnes ont été redemandés à part. **Ceux des fonctions ne l'ont pas
+été**, et `convertir_souverains` lisait toujours `fonctionLabel`, qui
+n'existait plus. Deux semaines sans que rien ne le signale : un champ vide
+ne casse rien, il appauvrit.
+
+**La leçon, inscrite aussi dans LEARNINGS :** quand on sort une donnée d'une
+requête pour la demander ailleurs, il faut lister **tous** les usages de
+cette donnée, pas seulement celui qu'on avait en tête.
+
+### Les pays en double
+*2026-10-05 · `socle/modele.py`, `attacher`*
+
+« Empire russe, Empire russe » sur 76 souverains sur 113. Une même fonction
+occupée deux fois rapportait deux fois le même pays. Dédoublonné en gardant
+l'ordre, qui porte une information : le premier pays est le principal.
+
+### Le socle publié pouvait rétrécir
+*2026-10-05 · `socle/reprendre_en_ligne.py`, `.github/workflows/pages.yml`*
+
+Un socle fraîchement fabriqué ne remplace plus un socle en ligne plus
+fourni.
+
+**Pourquoi :** l'empreinte des règles vide le cache dès qu'un fichier de la
+fabrique change. La première nuit après le correctif ci-dessus aurait
+remplacé 5 626 entrées par les quelques centaines refaites en deux heures —
+des semaines de fabrique perdues pour une correction de libellé. Le socle en
+ligne garde sa place tant qu'il est le plus fourni, et cède dès que la
+reconstruction le dépasse.
+
+**Deux trous comblés au passage**, tous deux signalés le 2026-09-21 et
+restés ouverts : le téléchargement du socle en ligne se fait maintenant dans
+un dossier provisoire mis en place d'un seul coup — un réseau coupé en route
+ne peut plus publier un socle mutilé ; et `verifier_site.py` vérifie que
+chaque siècle annoncé par l'index a bien son fichier, au lieu de croire
+l'index sur parole.
+
+---
+
 ## Éteint, mais toujours là
 
 Ces éléments **n'ont pas été supprimés**. Ils sont dans le code, derrière un

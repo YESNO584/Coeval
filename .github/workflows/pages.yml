@@ -133,6 +133,14 @@ jobs:
           if [ -s socle/public/data/index.json ]; then
             cp -r socle/public/data site/data
             echo "socle fabriqué : $(ls site/data | wc -l) fichiers"
+            # La fabrique repart de zéro quand ses règles changent. Sans cette
+            # comparaison, la première nuit après un correctif remplacerait un
+            # socle de plusieurs milliers d'entrées par les quelques centaines
+            # qu'elle a eu le temps de refaire : des semaines de fabrique
+            # perdues pour une correction de libellé. Le socle en ligne
+            # reprend sa place tant qu'il est le plus fourni.
+            python socle/reprendre_en_ligne.py "$SITE" site/data \
+              --seulement-si-plus-grand || true
           else
             echo "Rien de fabriqué cette fois : on reprend le socle en ligne."
             python socle/reprendre_en_ligne.py "$SITE" site/data || true

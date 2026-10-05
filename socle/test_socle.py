@@ -313,6 +313,69 @@ def test_un_nom_de_fichier_venu_du_reseau_est_refuse():
         reprendre_en_ligne.telecharger = original
 
 
+def test_le_metier_du_souverain_est_rempli():
+    """Il manquait à 113 souverains sur 113. Le libellé de la fonction venait
+    du service de libellés, sorti de la requête principale le 2026-09-19 ;
+    les noms des personnes ont été redemandés à part, pas ceux des
+    fonctions."""
+    lignes = [{
+        "p": {"value": "http://www.wikidata.org/entity/Q15189"},
+        "fonction": {"value": "http://www.wikidata.org/entity/Q2618625"},
+        "debut": {"value": "1796-11-17T00:00:00Z"}, "precDebut": {"value": "11"},
+        "fin": {"value": "1801-03-23T00:00:00Z"}, "precFin": {"value": "11"},
+    }]
+    noms = {"Q15189": "Paul Ier", "Q2618625": "empereur de Russie"}
+    entrees, _ = modele.convertir_souverains(lignes, noms)
+    verifier(len(entrees) == 1, f"une entrée attendue, {len(entrees)} obtenues")
+    verifier(entrees[0]["nom"] == "Paul Ier", f"nom : {entrees[0]['nom']}")
+    verifier(entrees[0]["detail"] == "empereur de Russie",
+             f"le métier doit être rempli, obtenu « {entrees[0]['detail']} »")
+
+
+def test_les_pays_ne_sont_pas_en_double():
+    """« Empire russe, Empire russe » sur 76 souverains sur 113 : une même
+    fonction occupée deux fois rapporte deux fois le même pays."""
+    entrees = [{"idFonction": "Q2618625", "pays": []}]
+    lignes = [
+        {"sujet": {"value": "http://www.wikidata.org/entity/Q2618625"},
+         "paysLabel": {"value": "Empire russe"}},
+        {"sujet": {"value": "http://www.wikidata.org/entity/Q2618625"},
+         "paysLabel": {"value": "Empire russe"}},
+        {"sujet": {"value": "http://www.wikidata.org/entity/Q2618625"},
+         "paysLabel": {"value": "Russie"}},
+    ]
+    modele.attacher(entrees, lignes, "idFonction", "paysLabel", "pays")
+    verifier(entrees[0]["pays"] == ["Empire russe", "Russie"],
+             f"attendu deux pays distincts dans l'ordre, obtenu {entrees[0]['pays']}")
+
+
+def test_un_siecle_annonce_sans_fichier_est_refuse():
+    """Vérifier ce qu'un index déclare sans vérifier ce qui est là laisserait
+    publier un socle mutilé par un téléchargement coupé en route."""
+    with tempfile.TemporaryDirectory() as dossier:
+        site = pathlib.Path(dossier)
+        (site / "css").mkdir()
+        (site / "js").mkdir()
+        (site / "data").mkdir()
+        (site / "index.html").write_text("<html></html>", encoding="utf-8")
+        (site / "css" / "base.css").write_text("body{}", encoding="utf-8")
+        (site / "js" / "app.js").write_text("// app", encoding="utf-8")
+        (site / "data" / "index.json").write_text(json.dumps({
+            "total": 1155,
+            "siecles": [{"debut": 0, "entrees": 2, "fichier": "0.json"},
+                        {"debut": 100, "entrees": 1, "fichier": "100.json"}],
+        }), encoding="utf-8")
+        (site / "data" / "0.json").write_text("[]", encoding="utf-8")
+
+        raisons = verifier_site.verifier(site, 500)
+        verifier(any("100.json" in r for r in raisons),
+                 f"le siècle manquant doit être nommé : {raisons}")
+
+        (site / "data" / "100.json").write_text("[]", encoding="utf-8")
+        verifier(verifier_site.verifier(site, 500) == [],
+                 "un socle complet doit être accepté")
+
+
 def main():
     for nom, fonction in sorted(globals().items()):
         if nom.startswith("test_") and callable(fonction):
